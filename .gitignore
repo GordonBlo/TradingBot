@@ -1,0 +1,16 @@
+﻿.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.test_artifacts/
+logs/
+
+data/historical/
+
+reports/backtests/
+reports/research/
+reports/diagnostics/
+reports/hypotheses/
+reports/multiregime/
+reports/mechanisms/

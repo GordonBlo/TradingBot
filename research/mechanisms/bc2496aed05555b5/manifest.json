@@ -1,0 +1,227 @@
+{
+  "base_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "10",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "2",
+    "warmup_candles": 0
+  },
+  "configuration_sha256": "bc2496aed05555b5c44c7035f053a4a59ea6b31a9f702d7a494232a8609a94b0",
+  "cost_stress_enabled": true,
+  "cost_stress_semantics": "Execution costs double; H7's preregistered opportunity threshold remains based on frozen base-cost assumptions so stress does not change strategy signals.",
+  "created_at": "2026-08-19T18:47:46.491641+00:00",
+  "fixed_window_definition": {
+    "consistency_percent_required": "60",
+    "maximum_drawdown_worse_ratio": "1.25",
+    "minimum_eligible_windows": 6,
+    "minimum_expansion_days": 365,
+    "minimum_window_days": 60,
+    "trade_count_ratio_required": "0.40",
+    "volatility_high_percentile": "67",
+    "volatility_lookback": 200,
+    "volatility_low_percentile": "33",
+    "warmup_candles": 250,
+    "window_days": 90
+  },
+  "frozen_baseline_parameters": {
+    "atr_period": 14,
+    "atr_stop_multiplier": "2.0",
+    "cooldown_bars": 4,
+    "fast_ema_period": 20,
+    "maximum_bars_in_position": 96,
+    "maximum_position_notional_usdc": "50",
+    "minimum_volume_ratio": "0.80",
+    "reward_risk_ratio": "2.0",
+    "risk_per_trade_percent": "0.50",
+    "rsi_max": "68",
+    "rsi_min": "52",
+    "rsi_period": 14,
+    "slow_ema_period": 50,
+    "volume_sma_period": 20
+  },
+  "frozen_mechanisms": [
+    {
+      "candidate_behavior": "Exact frozen H0 behavior.",
+      "creation_version": "3.2.2",
+      "fixed_parameters": {},
+      "hypothesis_id": "H0",
+      "mechanism_changed": "None",
+      "name": "Frozen Baseline",
+      "rationale": "Exact V3.2.1 control."
+    },
+    {
+      "candidate_behavior": "ATR% <= causal Q75 of the previous 100 valid observations.",
+      "creation_version": "3.2.2",
+      "fixed_parameters": {
+        "H1_LOOKBACK": 100,
+        "H1_MAX_PERCENTILE": "75"
+      },
+      "hypothesis_id": "H1",
+      "mechanism_changed": "None relative to frozen H1.",
+      "name": "Frozen High-Volatility Guard",
+      "rationale": "Exact V3.2.1 reference mechanism."
+    },
+    {
+      "candidate_behavior": "Require prior-window causal Q25 <= ATR% <= causal Q75.",
+      "creation_version": "3.2.2",
+      "fixed_parameters": {
+        "H5_LOOKBACK": 100,
+        "H5_MAX_PERCENTILE": "75",
+        "H5_MIN_PERCENTILE": "25"
+      },
+      "hypothesis_id": "H5",
+      "mechanism_changed": "Adds only a causal two-sided ATR% entry band.",
+      "name": "Volatility Band",
+      "rationale": "Reject both unusually low- and high-volatility baseline entries."
+    },
+    {
+      "candidate_behavior": "Arm on H0 crossover; enter only if the next closed bar remains baseline-valid.",
+      "creation_version": "3.2.2",
+      "fixed_parameters": {
+        "H6_CONFIRMATION_BARS": 1
+      },
+      "hypothesis_id": "H6",
+      "mechanism_changed": "Changes only entry timing by exactly one confirmation bar.",
+      "name": "One-Bar Trend Persistence",
+      "rationale": "Require a baseline crossover to persist for one more closed bar."
+    },
+    {
+      "candidate_behavior": "Require (4*ATR/close)*10000 >= 5*(2*fee_bps + 2*slippage_bps).",
+      "creation_version": "3.2.2",
+      "fixed_parameters": {
+        "H7_COST_OPPORTUNITY_MULTIPLIER": "5"
+      },
+      "hypothesis_id": "H7",
+      "mechanism_changed": "Adds only a signal-time cost/opportunity entry guard.",
+      "name": "Cost-to-Opportunity Guard",
+      "rationale": "Reject baseline entries whose theoretical target is small relative to costs."
+    }
+  ],
+  "frozen_v32_control_parameters": {
+    "h1_atr_percentile_lookback": 100,
+    "h1_max_percentile": "75",
+    "h2_ema_spread_lookback": 100,
+    "h2_max_percentile": "75",
+    "h3_confirmation_window_bars": 8,
+    "h4_reward_risk_ratio": "1.0",
+    "trade_count_ratio_warning": "0.40"
+  },
+  "holdout_policy": {
+    "consumed": false,
+    "evaluated": false,
+    "required_status": "LOCKED_BLIND_HOLDOUT",
+    "revealed": false,
+    "warmup_allowed": false
+  },
+  "interval": "15m",
+  "partitions": [
+    {
+      "candle_count": 1177,
+      "created_at": "2026-08-19T18:14:17.626349+00:00",
+      "dataset_sha256": "f48723d83c941cdc69d475f19f2d66c6f41eeab0703fb36aaa1f74459da74897",
+      "end": "2023-03-24T12:45:00+00:00",
+      "interval": "15m",
+      "kind": "RESEARCH_EXPANSION",
+      "source": "BINANCE_PUBLIC_SPOT (GAP_SAFE_SEGMENT_1_OF_2)",
+      "start": "2023-03-12T06:30:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": 82600,
+      "created_at": "2026-08-19T18:14:17.626349+00:00",
+      "dataset_sha256": "bdaa0baba2042d61133560141ffead2a5f453a0aa2f3e99468ddeb4cab0aae79",
+      "end": "2025-08-01T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "RESEARCH_EXPANSION",
+      "source": "BINANCE_PUBLIC_SPOT (GAP_SAFE_SEGMENT_2_OF_2)",
+      "start": "2023-03-24T14:00:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": null,
+      "created_at": "2026-08-19T17:47:57.306635+00:00",
+      "dataset_sha256": null,
+      "end": "2026-02-01T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "LOCKED_BLIND_HOLDOUT",
+      "source": "NOT_DOWNLOADED",
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": 19008,
+      "created_at": "2026-08-18T19:44:19.020055+00:00",
+      "dataset_sha256": "7f0a2ed0cdcf3d8afacf3ff46648cd554664aa0acccce8c378f1fbd195e4e89e",
+      "end": "2026-08-18T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "CONSUMED_RESEARCH",
+      "source": "BINANCE_PUBLIC_SPOT",
+      "start": "2026-02-01T00:00:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    }
+  ],
+  "project_version": "3.2.2",
+  "research_integrity": {
+    "candidate_combinations": false,
+    "dataset_status": "CONSUMED_RESEARCH_DATA",
+    "frozen_controls": [
+      "H0",
+      "H1"
+    ],
+    "new_candidates": [
+      "H5",
+      "H6",
+      "H7"
+    ],
+    "parameter_search": false
+  },
+  "run_id": "bc2496aed05555b5",
+  "source_control_metrics": {
+    "H0": {
+      "combined_frictionless_expectancy": "0.01209189594103496235530114980",
+      "combined_frictionless_pnl": "5.634823508522292457570335808",
+      "combined_net_expectancy": "-0.1078986167147552833541404192",
+      "combined_net_pnl": "-50.28075538907596204302943535",
+      "combined_profit_factor": "0.5728275424811540124321284510",
+      "combined_trades": "466",
+      "stress_expectancy": "-0.2292415015654820791207921596"
+    },
+    "H1": {
+      "combined_frictionless_expectancy": "0.02496895404047880012314744993",
+      "combined_frictionless_pnl": "9.413295673260507646426588623",
+      "combined_net_expectancy": "-0.09503700850961915830284798095",
+      "combined_net_pnl": "-35.82895220812642268017368882",
+      "combined_profit_factor": "0.5964576438541414997799226405",
+      "combined_trades": "377",
+      "stress_expectancy": "-0.2169873782398536922072357129"
+    }
+  },
+  "source_multiregime_manifest_sha256": "77f1ef1931997ebec68035506bd7420eab6345c7db996a23934e9d243c859b67",
+  "source_multiregime_run_id": "3db30d3c8eacef4e",
+  "stress_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "20",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "4",
+    "warmup_candles": 0
+  },
+  "support_criteria": {
+    "combined_frictionless_expectancy": "candidate > H0",
+    "combined_max_drawdown": "no more than 1.25 times H0",
+    "combined_net_expectancy": "candidate > H0",
+    "combined_profit_factor": "candidate >= H0",
+    "combined_trade_count_ratio": "at least 0.40 of H0",
+    "frictionless_window_consistency_percent": "at least 60",
+    "minimum_eligible_windows": 6,
+    "net_window_consistency_percent": "at least 60",
+    "next_stage_extra": "combined frictionless expectancy > 0",
+    "stress_expectancy": "candidate >= H0 under identical doubled costs"
+  },
+  "symbol": "BTCUSDC"
+}

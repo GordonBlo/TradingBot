@@ -1,0 +1,139 @@
+{
+  "baseline_name": "TrendMomentumBaselineStrategy",
+  "baseline_version": "3.0",
+  "blind_holdout": {
+    "consumed_timestamp": null,
+    "end": "2026-02-01T00:00:00+00:00",
+    "interval": "15m",
+    "registered_at": "2026-08-19T17:47:57.306635+00:00",
+    "reveal_timestamp": null,
+    "start": "2025-08-01T00:00:00+00:00",
+    "status": "LOCKED_BLIND_HOLDOUT",
+    "symbol": "BTCUSDC"
+  },
+  "consumed_dataset_ranges": [
+    {
+      "data_status": "CONSUMED_RESEARCH_DATA",
+      "end": "2026-05-15T00:00:00+00:00",
+      "interval": "15m",
+      "source_period": "development",
+      "start": "2026-02-01T00:00:00+00:00",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "data_status": "CONSUMED_RESEARCH_DATA",
+      "end": "2026-07-01T00:00:00+00:00",
+      "interval": "15m",
+      "source_period": "validation",
+      "start": "2026-05-15T00:00:00+00:00",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "data_status": "CONSUMED_RESEARCH_DATA",
+      "end": "2026-08-18T00:00:00+00:00",
+      "interval": "15m",
+      "source_period": "out_of_sample",
+      "start": "2026-07-01T00:00:00+00:00",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "data_status": "CONSUMED_RESEARCH_DATA",
+      "end": "2025-08-01T00:00:00+00:00",
+      "interval": "15m",
+      "source_period": "multiregime_expansion:3db30d3c8eacef4e",
+      "start": "2023-03-12T06:30:00+00:00",
+      "symbol": "BTCUSDC"
+    }
+  ],
+  "creation_timestamp": "2026-08-19T17:25:11.734081+00:00",
+  "holdout_status": "LOCKED_BLIND_HOLDOUT",
+  "hypotheses": [
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "The exact V3 TrendMomentumBaselineStrategy is frozen.",
+      "fixed_parameters": {},
+      "hypothesis_id": "H0",
+      "mechanism_changed": "None",
+      "name": "Frozen Baseline",
+      "rationale": "Control group for all V3.2 comparisons.",
+      "status": "TESTED_RESEARCH_DATA"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Baseline entry is accepted only when current ATR% is <= the prior-window Q75.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Winner ATR% was lower than loser ATR% in all inspected periods.",
+      "fixed_parameters": {
+        "H1_ATR_PERCENTILE_LOOKBACK": 100,
+        "H1_MAX_PERCENTILE": "75"
+      },
+      "hypothesis_id": "H1",
+      "mechanism_changed": "Adds only a causal ATR% entry guard.",
+      "name": "High Volatility Entry Guard",
+      "rationale": "Unusually high short-term volatility may reduce entry expectancy.",
+      "status": "TESTED_RESEARCH_DATA"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Baseline entry is accepted only when current EMA spread% is <= the prior-window Q75.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Winner EMA spread % was lower than loser spread % in all inspected periods.",
+      "fixed_parameters": {
+        "H2_EMA_SPREAD_LOOKBACK": 100,
+        "H2_MAX_PERCENTILE": "75"
+      },
+      "hypothesis_id": "H2",
+      "mechanism_changed": "Adds only a causal EMA-spread entry guard.",
+      "name": "EMA Extension Entry Guard",
+      "rationale": "More extended EMA separation may indicate late entries.",
+      "status": "TESTED_RESEARCH_DATA"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Arm after the crossover, wait at most eight closed bars for EMA20 pullback/reclaim, then enter next open.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Many losing baseline trades moved adverse early.",
+      "fixed_parameters": {
+        "H3_CONFIRMATION_WINDOW_BARS": 8
+      },
+      "hypothesis_id": "H3",
+      "mechanism_changed": "Changes only entry timing after a baseline-valid crossover.",
+      "name": "Crossover Pullback Confirmation",
+      "rationale": "A causal pullback/reclaim may improve immediate crossover timing.",
+      "status": "TESTED_RESEARCH_DATA"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Exact baseline entry/exit behavior with a 1R take-profit bracket.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Median MFE was below 1R and only about 24-35% of trades reached 2R.",
+      "fixed_parameters": {
+        "H4_REWARD_RISK_RATIO": "1.0"
+      },
+      "hypothesis_id": "H4",
+      "mechanism_changed": "Changes only reward/risk target from 2R to 1R.",
+      "name": "1R Profit Target",
+      "rationale": "The 2R target may exceed the observed favorable-excursion distribution.",
+      "status": "TESTED_RESEARCH_DATA"
+    }
+  ],
+  "mechanism_runs": [
+    {
+      "configuration_sha256": "bc2496aed05555b5c44c7035f053a4a59ea6b31a9f702d7a494232a8609a94b0",
+      "manifest_path": "research\\mechanisms\\bc2496aed05555b5\\manifest.json",
+      "run_id": "bc2496aed05555b5",
+      "source_multiregime_run_id": "3db30d3c8eacef4e"
+    }
+  ],
+  "multiregime_runs": [
+    {
+      "configuration_sha256": "3db30d3c8eacef4ef5b613499e066018a41e501596cb4fb34ec75c32ff361cbf",
+      "manifest_path": "research\\multiregime\\3db30d3c8eacef4e\\manifest.json",
+      "run_id": "3db30d3c8eacef4e"
+    }
+  ],
+  "project_version": "3.2.2",
+  "source_research_run_id": "adeef00722e9704d"
+}

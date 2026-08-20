@@ -1,0 +1,215 @@
+{
+  "base_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "10",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "2",
+    "warmup_candles": 0
+  },
+  "configuration_sha256": "3db30d3c8eacef4ef5b613499e066018a41e501596cb4fb34ec75c32ff361cbf",
+  "cost_stress_enabled": true,
+  "created_at": "2026-08-19T18:14:31.331967+00:00",
+  "frozen_baseline_parameters": {
+    "atr_period": 14,
+    "atr_stop_multiplier": "2.0",
+    "cooldown_bars": 4,
+    "fast_ema_period": 20,
+    "maximum_bars_in_position": 96,
+    "maximum_position_notional_usdc": "50",
+    "minimum_volume_ratio": "0.80",
+    "reward_risk_ratio": "2.0",
+    "risk_per_trade_percent": "0.50",
+    "rsi_max": "68",
+    "rsi_min": "52",
+    "rsi_period": 14,
+    "slow_ema_period": 50,
+    "volume_sma_period": 20
+  },
+  "frozen_hypotheses": [
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "The exact V3 TrendMomentumBaselineStrategy is frozen.",
+      "fixed_parameters": {},
+      "hypothesis_id": "H0",
+      "mechanism_changed": "None",
+      "name": "Frozen Baseline",
+      "rationale": "Control group for all V3.2 comparisons.",
+      "status": "REGISTERED"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Baseline entry is accepted only when current ATR% is <= the prior-window Q75.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Winner ATR% was lower than loser ATR% in all inspected periods.",
+      "fixed_parameters": {
+        "H1_ATR_PERCENTILE_LOOKBACK": 100,
+        "H1_MAX_PERCENTILE": "75"
+      },
+      "hypothesis_id": "H1",
+      "mechanism_changed": "Adds only a causal ATR% entry guard.",
+      "name": "High Volatility Entry Guard",
+      "rationale": "Unusually high short-term volatility may reduce entry expectancy.",
+      "status": "REGISTERED"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Baseline entry is accepted only when current EMA spread% is <= the prior-window Q75.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Winner EMA spread % was lower than loser spread % in all inspected periods.",
+      "fixed_parameters": {
+        "H2_EMA_SPREAD_LOOKBACK": 100,
+        "H2_MAX_PERCENTILE": "75"
+      },
+      "hypothesis_id": "H2",
+      "mechanism_changed": "Adds only a causal EMA-spread entry guard.",
+      "name": "EMA Extension Entry Guard",
+      "rationale": "More extended EMA separation may indicate late entries.",
+      "status": "REGISTERED"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Arm after the crossover, wait at most eight closed bars for EMA20 pullback/reclaim, then enter next open.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Many losing baseline trades moved adverse early.",
+      "fixed_parameters": {
+        "H3_CONFIRMATION_WINDOW_BARS": 8
+      },
+      "hypothesis_id": "H3",
+      "mechanism_changed": "Changes only entry timing after a baseline-valid crossover.",
+      "name": "Crossover Pullback Confirmation",
+      "rationale": "A causal pullback/reclaim may improve immediate crossover timing.",
+      "status": "REGISTERED"
+    },
+    {
+      "baseline_behavior": "EMA20/EMA50, RSI14 52-68, volume ratio >=0.80, ATR14 2x stop, 0.50% risk, 96-bar maximum hold, 4-bar cooldown, V2 next-open/STOP_FIRST",
+      "candidate_behavior": "Exact baseline entry/exit behavior with a 1R take-profit bracket.",
+      "creation_version": "3.2",
+      "diagnostic_evidence": "Median MFE was below 1R and only about 24-35% of trades reached 2R.",
+      "fixed_parameters": {
+        "H4_REWARD_RISK_RATIO": "1.0"
+      },
+      "hypothesis_id": "H4",
+      "mechanism_changed": "Changes only reward/risk target from 2R to 1R.",
+      "name": "1R Profit Target",
+      "rationale": "The 2R target may exceed the observed favorable-excursion distribution.",
+      "status": "REGISTERED"
+    }
+  ],
+  "historical_expansion": {
+    "actual_available_start": "2023-03-12T06:30:00+00:00",
+    "end": "2025-08-01T00:00:00+00:00",
+    "requested_start": "2023-01-01T00:00:00+00:00"
+  },
+  "holdout_policy": {
+    "evaluated": false,
+    "required_status": "LOCKED_BLIND_HOLDOUT",
+    "revealed": false,
+    "warmup_allowed": false
+  },
+  "interval": "15m",
+  "partitions": [
+    {
+      "candle_count": 1177,
+      "created_at": "2026-08-19T18:14:17.626349+00:00",
+      "dataset_sha256": "f48723d83c941cdc69d475f19f2d66c6f41eeab0703fb36aaa1f74459da74897",
+      "end": "2023-03-24T12:45:00+00:00",
+      "interval": "15m",
+      "kind": "RESEARCH_EXPANSION",
+      "source": "BINANCE_PUBLIC_SPOT (GAP_SAFE_SEGMENT_1_OF_2)",
+      "start": "2023-03-12T06:30:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": 82600,
+      "created_at": "2026-08-19T18:14:17.626349+00:00",
+      "dataset_sha256": "bdaa0baba2042d61133560141ffead2a5f453a0aa2f3e99468ddeb4cab0aae79",
+      "end": "2025-08-01T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "RESEARCH_EXPANSION",
+      "source": "BINANCE_PUBLIC_SPOT (GAP_SAFE_SEGMENT_2_OF_2)",
+      "start": "2023-03-24T14:00:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": null,
+      "created_at": "2026-08-19T17:47:57.306635+00:00",
+      "dataset_sha256": null,
+      "end": "2026-02-01T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "LOCKED_BLIND_HOLDOUT",
+      "source": "NOT_DOWNLOADED",
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT",
+      "symbol": "BTCUSDC"
+    },
+    {
+      "candle_count": 19008,
+      "created_at": "2026-08-18T19:44:19.020055+00:00",
+      "dataset_sha256": "7f0a2ed0cdcf3d8afacf3ff46648cd554664aa0acccce8c378f1fbd195e4e89e",
+      "end": "2026-08-18T00:00:00+00:00",
+      "interval": "15m",
+      "kind": "CONSUMED_RESEARCH",
+      "source": "BINANCE_PUBLIC_SPOT",
+      "start": "2026-02-01T00:00:00+00:00",
+      "status": "CONSUMED_RESEARCH_DATA",
+      "symbol": "BTCUSDC"
+    }
+  ],
+  "project_version": "3.2.1",
+  "regime_definitions": {
+    "long_trend": {
+      "LONG_TREND_DOWN": "close < causal EMA200 and causal EMA50 < EMA200",
+      "LONG_TREND_MIXED": "otherwise",
+      "LONG_TREND_UP": "close > causal EMA200 and causal EMA50 > EMA200"
+    },
+    "strategy_effect": "DIAGNOSTIC_ONLY",
+    "volatility": {
+      "current_observation_excluded": true,
+      "high": ">= causal Q67",
+      "lookback": 200,
+      "low": "<= causal Q33",
+      "measure": "ATR14 / close * 100",
+      "medium": "between causal Q33 and Q67"
+    }
+  },
+  "run_id": "3db30d3c8eacef4e",
+  "stress_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "20",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "4",
+    "warmup_candles": 0
+  },
+  "support_criteria": {
+    "combined_frictionless_expectancy": "candidate > H0",
+    "combined_max_drawdown": "no more than 1.25 times H0",
+    "combined_net_expectancy": "candidate > H0",
+    "combined_profit_factor": "candidate >= H0",
+    "combined_trade_count_ratio": "at least 0.40 of H0",
+    "frictionless_window_consistency_percent": "at least 60",
+    "minimum_eligible_windows": 6,
+    "net_window_consistency_percent": "at least 60",
+    "stress_expectancy": "candidate >= H0 under identical doubled costs",
+    "v3_3_eligibility_extra": "combined frictionless expectancy > 0"
+  },
+  "symbol": "BTCUSDC",
+  "window_definition": {
+    "consistency_percent_required": "60",
+    "maximum_drawdown_worse_ratio": "1.25",
+    "minimum_eligible_windows": 6,
+    "minimum_expansion_days": 365,
+    "minimum_window_days": 60,
+    "trade_count_ratio_required": "0.40",
+    "volatility_high_percentile": "67",
+    "volatility_lookback": 200,
+    "volatility_low_percentile": "33",
+    "warmup_candles": 250,
+    "window_days": 90
+  }
+}
