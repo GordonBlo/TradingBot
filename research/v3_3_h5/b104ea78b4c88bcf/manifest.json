@@ -1,0 +1,143 @@
+{
+  "base_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "10",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "2",
+    "warmup_candles": 0
+  },
+  "candidates": [
+    {
+      "candidate_id": "H5_Q25",
+      "is_frozen_reference": true,
+      "lookback": 100,
+      "maximum_percentile": "75",
+      "minimum_percentile": "25"
+    },
+    {
+      "candidate_id": "H5_Q35",
+      "is_frozen_reference": false,
+      "lookback": 100,
+      "maximum_percentile": "75",
+      "minimum_percentile": "35"
+    },
+    {
+      "candidate_id": "H5_Q45",
+      "is_frozen_reference": false,
+      "lookback": 100,
+      "maximum_percentile": "75",
+      "minimum_percentile": "45"
+    },
+    {
+      "candidate_id": "H5_Q50",
+      "is_frozen_reference": false,
+      "lookback": 100,
+      "maximum_percentile": "75",
+      "minimum_percentile": "50"
+    }
+  ],
+  "configuration_sha256": "b104ea78b4c88bcf47433279c0ba958f9495d13714bd641d47362d3b354cbeac",
+  "created_at": "2026-08-20T17:42:16.983916+00:00",
+  "frozen_baseline_parameters": {
+    "atr_period": 14,
+    "atr_stop_multiplier": "2.0",
+    "cooldown_bars": 4,
+    "fast_ema_period": 20,
+    "maximum_bars_in_position": 96,
+    "maximum_position_notional_usdc": "50",
+    "minimum_volume_ratio": "0.80",
+    "reward_risk_ratio": "2.0",
+    "risk_per_trade_percent": "0.50",
+    "rsi_max": "68",
+    "rsi_min": "52",
+    "rsi_period": 14,
+    "slow_ema_period": 50,
+    "volume_sma_period": 20
+  },
+  "frozen_reference": "H5_Q25",
+  "holdout_policy": {
+    "consumed": false,
+    "evaluated": false,
+    "required_status": "LOCKED_BLIND_HOLDOUT",
+    "revealed": false,
+    "warmup_allowed": false
+  },
+  "interval": "15m",
+  "parameter_scope": {
+    "lookback": 100,
+    "only_parameter_allowed_to_change": true,
+    "parameter": "H5 lower ATR percentile",
+    "upper_percentile": "75"
+  },
+  "primary_metric": "combined_net_expectancy_R_per_trade",
+  "project_version": "3.3",
+  "research_integrity": {
+    "automatic_optimization": false,
+    "blind_holdout_reveal": false,
+    "candidate_combinations": false,
+    "dataset_status": "CONSUMED_RESEARCH_DATA",
+    "ema_tuning": false,
+    "grid_search": false,
+    "lookback_tuning": false,
+    "random_search": false,
+    "rsi_tuning": false,
+    "stop_tuning": false,
+    "target_tuning": false,
+    "upper_percentile_tuning": false,
+    "volume_tuning": false
+  },
+  "research_type": "CONTROLLED_H5_PARAMETER_RESEARCH",
+  "run_id": "b104ea78b4c88bcf",
+  "secondary_metrics": [
+    "frictionless_expectancy_R_per_trade",
+    "average_total_friction_R_per_trade",
+    "profit_factor",
+    "win_rate",
+    "payoff_ratio",
+    "maximum_drawdown",
+    "trade_count",
+    "window_consistency"
+  ],
+  "selection_policy": {
+    "automatic_best_candidate_selection": false,
+    "highest_return_alone_is_not_sufficient": true,
+    "if_none_pass_stop": true,
+    "multiple_candidates_may_pass": true
+  },
+  "source": {
+    "mechanism_manifest_sha256": "9ca55d5660f587aff4204c2d351fd74325eabe0303473e3c346cf0a40c2783bb",
+    "mechanism_run_id": "bc2496aed05555b5",
+    "multiregime_run_id": "3db30d3c8eacef4e",
+    "r_normalized_audit_sha256": "97e7a72f3b17b691eb235dddce431658d4a8331714dce2a670c6b673969d8830"
+  },
+  "stress_cost_assumptions": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "fee_bps": "20",
+    "initial_capital_usdc": "1000",
+    "slippage_bps": "4",
+    "warmup_candles": 0
+  },
+  "support_criteria": {
+    "combined_frictionless_expectancy": "candidate > H5_Q25",
+    "combined_net_expectancy": "candidate > H5_Q25",
+    "combined_profit_factor": "candidate >= H5_Q25",
+    "consistency_percent_required": "60",
+    "frictionless_window_consistency": "candidate beats H5_Q25 in at least 60% of eligible windows",
+    "maximum_drawdown": "candidate <= 1.25 times H5_Q25",
+    "maximum_drawdown_worse_ratio": "1.25",
+    "minimum_eligible_windows": 6,
+    "net_window_consistency": "candidate beats H5_Q25 in at least 60% of eligible windows",
+    "stress_net_expectancy": "candidate >= H5_Q25 under identical doubled execution costs",
+    "trade_count": "candidate >= 50% of H5_Q25 trades",
+    "trade_count_ratio_required": "0.50"
+  },
+  "symbol": "BTCUSDC",
+  "v3_4_eligibility": {
+    "all_support_gates_required": true,
+    "combined_net_expectancy_R": "> 0",
+    "combined_profit_factor": "> 1",
+    "positive_net_windows_percent": ">= 60"
+  }
+}
