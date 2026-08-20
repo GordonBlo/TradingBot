@@ -24,6 +24,10 @@ from src.diagnostics.risk_capital_audit import (
     build_risk_capital_audit,
     summarize_risk_capital_audit,
 )
+from src.diagnostics.r_normalized import (
+    build_r_normalized_trades,
+    summarize_r_normalized_trades,
+)
 from src.hypotheses.manifest import ResearchManifestStore
 from src.hypotheses.mechanisms import (
     MechanismHypothesisId,
@@ -184,7 +188,10 @@ def main(argv: list[str] | None = None) -> int:
         expected_windows = _read_expected_windows(source_report)
 
         all_records = []
+        all_r_records = []
+
         csv_rows: list[dict[str, object]] = []
+        r_csv_rows: list[dict[str, object]] = []
 
         logger.info("H5 RISK/CAPITAL AUDIT (OFFLINE)")
         logger.info("Eligible frozen windows: %d", len(expected_windows))
@@ -234,6 +241,32 @@ def main(argv: list[str] | None = None) -> int:
                     f"Audit record count mismatch in {window.window_id}."
                 )
 
+            risky_by_trade_id = {
+                record.trade_id: record.actual_stop_risk
+                for record in records
+            }
+
+            r_records = build_r_normalized_trades(
+                trades=evaluation.backtest.trades,
+                actual_stop_risk_by_trade_id=risky_by_trade_id,
+                slippage_bps=backtest_config.slippage_bps,
+            )
+
+            if len(r_records) != actual_trades:
+                raise ValueError(
+                    f"R-normalized record count mismatch in {window.window_id}."
+                )
+
+            all_r_records.extend(r_records)
+
+            for record in r_records:
+                r_csv_rows.append(
+                    {
+                        "window_id": window.window_id,
+                        **asdict(record),
+                    }
+                )
+
             all_records.extend(records)
 
             for record in records:
@@ -261,11 +294,56 @@ def main(argv: list[str] | None = None) -> int:
 
         summary = summarize_risk_capital_audit(records_tuple)
 
+        r_records_tuple = tuple(all_r_records)
+
+        if len(r_records_tuple) != expected_total:
+            raise ValueError(
+                f"Combined R-normalized trade audit failed: "
+                f"expected {expected_total}, got {len(r_records_tuple)}."
+            )
+
+        r_summary = summarize_r_normalized_trades(
+            r_records_tuple
+        )
+
+        # Both diagnostic systems calculate friction / actual initial risk.
+        # They must agree exactly apart from negligible Decimal arithmetic.
+
+        expecred_average_friciton_r = (
+            summary.average_friction_to_actual_risk_percent
+            / Decimal("100")
+        )
+
+        if (
+            abs(
+                r_summary.average_total_friction_r
+                - expecred_average_friciton_r
+            )
+            > Decimal("1e-20")
+        ):
+            raise ValueError(
+                "Risk/capital audit and R-normalized friction disagree: "
+            )
+
         output = Path(args.output_root)
         output.mkdir(parents=True, exist_ok=True)
 
         csv_path = output / "trade_audit.csv"
+        r_csv_path = output / "r_normalized_trade_audit.csv"
         summary_path = output / "summary.json"
+
+        if r_csv_rows:
+            with r_csv_path.open(
+                "w",
+                encoding="utf-8",
+                newline="",
+            ) as stream:
+                writer = csv.DictWriter(
+                    stream,
+                    fieldnames=tuple(r_csv_rows[0].keys()),
+                )
+                writer.writeheader()
+                writer.writerows(r_csv_rows)
 
         if csv_rows:
             with csv_path.open(
@@ -295,6 +373,7 @@ def main(argv: list[str] | None = None) -> int:
                 strategy_config.risk_per_trade_percent
             ),
             "audit": asdict(summary),
+            "r_normalized_audit": asdict(r_summary),
             "holdout": {
                 "status": "LOCKED_BLIND_HOLDOUT",
                 "revealed": False,
@@ -362,6 +441,73 @@ def main(argv: list[str] | None = None) -> int:
             "Blind holdout: LOCKED | NOT REVEALED | NOT CONSUMED"
         )
 
+        logger.info("")
+        logger.info("H5 R-NORMALIZED PERFORMANCE")
+        logger.info(
+            "Trades: %d | Winners: %d | Losers: %d | Breakeven: %d",
+            r_summary.trade_count,
+            r_summary.winning_trades,
+            r_summary.losing_trades,
+            r_summary.breakeven_trades,
+        )
+
+        logger.info(
+            "Win rate: %s%%",
+            r_summary.win_rate_percent,
+        )
+
+        logger.info(
+            "Frictionless expectancy: %s R/trade",
+            r_summary.frictionless_expectancy_r,
+        )
+
+        logger.info(
+            "Gross after slippage expectancy: %s R/trade",
+            r_summary.gross_after_slippage_expectancy_r,
+        )
+
+        logger.info(
+            "Fee cost: %s R/trade",
+            r_summary.average_fee_r,
+        )
+
+        logger.info(
+            "Slippage cost: %s R/trade",
+            r_summary.average_slippage_cost_r,
+        )
+
+        logger.info(
+            "Total friction: %s R/trade",
+            r_summary.average_total_friction_r,
+        )
+
+        logger.info(
+            "NET expectancy: %s R/trade",
+            r_summary.net_expectancy_r,
+        )
+
+        logger.info(
+            "Average winner: %s R | Average loser: %s R",
+            r_summary.average_winner_r,
+            r_summary.average_loser_r,
+        )
+
+        logger.info(
+            "Payoff ratio: %s | Profit factor: %s",
+            r_summary.payoff_ratio_r,
+            r_summary.profit_factor_r,
+        )
+
+        logger.info(
+            "Actual win rate: %s%% | Break-even win rate: %s%%",
+            r_summary.win_rate_percent,
+            r_summary.break_even_win_rate_percent,
+        )
+
+        logger.info(
+            "R-normalized CSV: %s",
+            r_csv_path.resolve(),
+        )
         return 0
 
     except (OSError, RuntimeError, ValueError, KeyError) as exc:
