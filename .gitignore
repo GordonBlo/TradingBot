@@ -16,3 +16,5 @@ reports/multiregime/
 reports/mechanisms/
 
 reports/audits/
+
+.pytest_runtime/
