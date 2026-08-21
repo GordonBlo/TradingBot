@@ -1,0 +1,87 @@
+{
+  "blind_holdout_consumed": false,
+  "blind_holdout_evaluated": false,
+  "blind_holdout_revealed": false,
+  "blind_holdout_status": "LOCKED_BLIND_HOLDOUT",
+  "comparison_policy": {
+    "baseline_entry_match_ratio": ">=80% of frozen baseline entry signals remain matched",
+    "combined_frictionless_expectancy": "H9 > H5_Q25",
+    "combined_net_expectancy": "H9 > H5_Q25",
+    "cost_stress": "H9 net expectancy >= H5_Q25 under identical doubled costs",
+    "frictionless_window_consistency": "H9 beats H5_Q25 in >=60% eligible windows",
+    "maximum_drawdown": "H9 <=1.25 times H5_Q25 maximum drawdown",
+    "net_window_consistency": "H9 beats H5_Q25 in >=60% eligible windows",
+    "profit_factor": "H9 >= H5_Q25",
+    "reference": "H5_Q25",
+    "trade_count_ratio": "H9 trades >=80% of H5_Q25 trades"
+  },
+  "configuration_sha256": "eb7a43ccaad63dfc727aea2cbc5614b01299294dad731025b58d62699dee1545",
+  "created_at": "2026-08-21T09:42:14.276975+00:00",
+  "criteria": {
+    "consistency_percent_required": "60",
+    "maximum_drawdown_worse_ratio": "1.25",
+    "minimum_baseline_entry_match_ratio": "0.80",
+    "minimum_eligible_windows": 11,
+    "minimum_trade_count_ratio": "0.80"
+  },
+  "dataset_status": "CONSUMED_RESEARCH_DATA",
+  "definition": {
+    "adverse_trigger_r": "0.5",
+    "execution_timing": "NEXT_BAR_OPEN",
+    "hypothesis_id": "H9",
+    "name": "Early Failure Exit",
+    "observation_bars": 4,
+    "partial_exit": false,
+    "preserve_h5_q25_entries": true,
+    "preserve_original_stop_before_execution": true,
+    "preserve_original_take_profit_before_execution": true,
+    "trailing_stop": false,
+    "trigger_semantics": "CLOSED_CANDLE_LOW_REACHES_ENTRY_MINUS_0.5R"
+  },
+  "next_stage_eligibility": {
+    "all_support_gates_required": true,
+    "combined_net_expectancy_r": "> 0",
+    "positive_net_windows_percent": ">= 60",
+    "profit_factor": "> 1"
+  },
+  "rationale": {
+    "early_failure_gross_expectancy_r": "-0.4474553959403378918893699656",
+    "early_failure_net_expectancy_r": "-0.9819638249747073323629158309",
+    "early_failure_percent": "43.14720812182741116751269036",
+    "early_failure_trades": 85,
+    "final_positive_percent": "15.29411764705882352941176471",
+    "same_bar_positive_two_r_ambiguous": 0,
+    "strict_later_positive_two_r_percent": "15.29411764705882352941176471"
+  },
+  "reference_candidate": "H5_Q25",
+  "reference_trade_count": 197,
+  "required_counterfactual_diagnostics": [
+    "h9_triggered_trades",
+    "h9_exit_trades",
+    "baseline_stop_losses_improved",
+    "baseline_trend_exits_improved",
+    "baseline_take_profits_cut_early",
+    "matched_baseline_entries",
+    "unmatched_baseline_entries",
+    "new_h9_entries",
+    "gross_R_saved_or_lost",
+    "net_R_saved_or_lost",
+    "average_net_R_of_h9_exits"
+  ],
+  "research_integrity": {
+    "alternative_adverse_R_values": false,
+    "alternative_observation_windows": false,
+    "blind_holdout_access": false,
+    "entry_logic_changes": false,
+    "parameter_search": false,
+    "partial_exit_research": false,
+    "stop_parameter_changes": false,
+    "target_changes": false,
+    "trailing_stop_research": false
+  },
+  "run_id": "eb7a43ccaad63dfc",
+  "source_early_failure_sha256": "1915af65342dce68192f2c97dd8a981c1c9a79db5e46ae09796ae50ee1f7ba85",
+  "source_v331_run_id": "ef593be9a0bb2697",
+  "source_v33_run_id": "b104ea78b4c88bcf",
+  "version": "3.3.3"
+}
