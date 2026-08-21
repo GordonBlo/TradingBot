@@ -22,6 +22,7 @@ from src.cli.run_v33_h5 import (
     _read_reference_windows,
 )
 from src.config.settings import load_settings
+from src.diagnostics.early_failure import summarize_early_failure
 from src.diagnostics.h5_exit_diagnostics import (
     build_h5_exit_trade_records,
     summarize_excursion_groups,
@@ -45,6 +46,7 @@ from src.hypotheses.manifest import ResearchManifestStore
 from src.research.evaluation import evaluate_strategy_period
 from src.research.multiregime.windows import construct_windows
 from src.strategy.models import StrategyAction
+from src.utils import logger
 from src.utils.logger import configure_logging, get_logger
 
 
@@ -273,6 +275,9 @@ def main(argv: list[str] | None = None) -> int:
         risk_summary = summarize_risk_capital_audit(tuple(combined_risk))
         exit_groups = summarize_exit_groups(tuple(combined_exit))
         excursion_groups = summarize_excursion_groups(tuple(combined_exit))
+        early_failure_summary = summarize_early_failure(
+            tuple(combined_exit)
+        )
         parity_maxima = {}
         for field in sorted({row.field for row in parity_rows}):
             selected = [
@@ -301,6 +306,38 @@ def main(argv: list[str] | None = None) -> int:
         excursion_rows = [asdict(row) for row in excursion_groups]
         _write_csv(directory / "exit_groups.csv", exit_rows)
         _write_csv(directory / "excursion_summary.csv", excursion_rows)
+        (directory / "early_failure_summary.json").write_text(
+            json.dumps(
+                _plain(
+                    {
+                        "version": "3.3.2-diagnostic",
+                        "source_v331_run_id": run_id,
+                        "source_v33_run_id": EXPECTED_V33_RUN_ID,
+                        "candidate": "H5_Q25",
+                        "dataset_status": "CONSUMED_RESEARCH_DATA",
+                        "trade_count": len(r_records),
+                        "definition": {
+                            "early_failure_threshold_r": Decimal("0.5"),
+                            "early_failure_window_bars": 4,
+                            "recovery_requires_strictly_later_bar": True,
+                            "same_bar_touch_is_ambiguous": True,
+                        },
+                        "summary": asdict(early_failure_summary),
+                        "blind_holdout": {
+                            "status": "LOCKED_BLIND_HOLDOUT",
+                            "loaded": False,
+                            "revealed": False,
+                            "consumed": False,
+                            "evaluated": False,
+                        },
+                    }
+                ),
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         payload = {
             "version": "3.3.1",
             "run_id": run_id,
@@ -372,6 +409,38 @@ def main(argv: list[str] | None = None) -> int:
             "Continuous-state parity: trades=%d | entry signal differences=%d",
             continuous_trades,
             continuous_signal_differences,
+        )
+        logger.info("")
+        logger.info("EARLY FAILURE DIAGNOSTIC")
+        logger.info(
+            "Early -0.5R within first 4 bars: %d trades (%s%%)",
+            early_failure_summary.trades,
+            early_failure_summary.percentage_of_all_trades,
+        )
+        logger.info(
+            "Gross=%sR | Net=%sR | Final positive=%s%%",
+            early_failure_summary.frictionless_expectancy_r,
+            early_failure_summary.net_expectancy_r,
+            early_failure_summary.final_positive_percent,
+        )
+        logger.info(
+            "Final exits: SL=%d | TP=%d | TREND=%d | TIME=%d",
+            early_failure_summary.stop_loss_trades,
+            early_failure_summary.take_profit_trades,
+            early_failure_summary.trend_exit_trades,
+            early_failure_summary.time_exit_trades,
+        )
+        logger.info(
+            "Strict later recovery: +0.5R=%s%% | +1R=%s%% | +2R=%s%%",
+            early_failure_summary.later_positive_half_r_percent,
+            early_failure_summary.later_positive_one_r_percent,
+            early_failure_summary.later_positive_two_r_percent,
+        )
+        logger.info(
+            "Same-bar ambiguous: +0.5R=%d | +1R=%d | +2R=%d",
+            early_failure_summary.same_bar_positive_half_r_ambiguous,
+            early_failure_summary.same_bar_positive_one_r_ambiguous,
+            early_failure_summary.same_bar_positive_two_r_ambiguous,
         )
         logger.warning(
             "Blind holdout: LOCKED | NOT LOADED | NOT REVEALED | "

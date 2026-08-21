@@ -35,6 +35,12 @@ class ExcursionThresholds:
     bars_to_positive_half_r: int | None
     bars_to_positive_one_r: int | None
 
+    #Added for ordering diagnostics
+    bars_to_positive_one_and_half_r: int | None = None
+    bars_to_positive_two_r: int | None = None
+    bars_to_negative_half_r: int | None = None
+    bars_to_negative_one_r: int | None = None
+
 
 def _held_candles(
     trade: Trade,
@@ -115,21 +121,39 @@ def calculate_excursion_thresholds(
             None,
         )
 
-    def reached_negative(threshold: Decimal) -> bool:
+    def first_negative(threshold: Decimal) -> int | None:
         price = trade.entry_price - initial_risk_per_unit * threshold
-        return any(candle.low <= price for candle in held)
+
+        return next(
+            (
+                index
+                for index, candle in enumerate(held, start=1)
+                if candle.low <= price
+            ),
+            None,
+        )
 
     half = first_positive(Decimal("0.5"))
     one = first_positive(Decimal("1"))
     one_and_half = first_positive(Decimal("1.5"))
     two = first_positive(Decimal("2"))
+
+    negative_half = first_negative(Decimal("0.5"))
+    negative_one = first_negative(Decimal("1"))
+
     return ExcursionThresholds(
         reached_positive_half_r=half is not None,
         reached_positive_one_r=one is not None,
-        reached_positive_one_and_half_r=one_and_half is not None,
+        reached_positive_one_and_half_r=(
+            one_and_half is not None
+        ),
         reached_positive_two_r=two is not None,
-        reached_negative_half_r=reached_negative(Decimal("0.5")),
-        reached_negative_one_r=reached_negative(Decimal("1")),
+        reached_negative_half_r=negative_half is not None,
+        reached_negative_one_r=negative_one is not None,
         bars_to_positive_half_r=half,
         bars_to_positive_one_r=one,
+        bars_to_positive_one_and_half_r=one_and_half,
+        bars_to_positive_two_r=two,
+        bars_to_negative_half_r=negative_half,
+        bars_to_negative_one_r=negative_one,
     )
