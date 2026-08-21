@@ -24,6 +24,33 @@ class TradeExcursions:
     first_four_bar_mae_r: Decimal | None
 
 
+@dataclass(frozen=True, slots=True)
+class ExcursionThresholds:
+    reached_positive_half_r: bool
+    reached_positive_one_r: bool
+    reached_positive_one_and_half_r: bool
+    reached_positive_two_r: bool
+    reached_negative_half_r: bool
+    reached_negative_one_r: bool
+    bars_to_positive_half_r: int | None
+    bars_to_positive_one_r: int | None
+
+
+def _held_candles(
+    trade: Trade,
+    dataset: HistoricalDataset,
+    timestamp_index: dict[object, int],
+):
+    try:
+        entry_index = timestamp_index[trade.entry_time]
+    except KeyError as exc:
+        raise ValueError(f"Entry candle missing for {trade.trade_id}.") from exc
+    held = dataset.candles[entry_index : entry_index + trade.bars_held]
+    if len(held) != trade.bars_held:
+        raise ValueError(f"Held candle range is incomplete for {trade.trade_id}.")
+    return held
+
+
 def calculate_excursions(
     trade: Trade,
     dataset: HistoricalDataset,
@@ -33,13 +60,7 @@ def calculate_excursions(
 ) -> TradeExcursions:
     """Inspect only the completed trade's held OHLC bars, after the backtest."""
 
-    try:
-        entry_index = timestamp_index[trade.entry_time]
-    except KeyError as exc:
-        raise ValueError(f"Entry candle missing for {trade.trade_id}.") from exc
-    held = dataset.candles[entry_index : entry_index + trade.bars_held]
-    if len(held) != trade.bars_held:
-        raise ValueError(f"Held candle range is incomplete for {trade.trade_id}.")
+    held = _held_candles(trade, dataset, timestamp_index)
     highest = max(candle.high for candle in held)
     lowest = min(candle.low for candle in held)
     mfe = max(Decimal("0"), highest - trade.entry_price)
@@ -69,3 +90,46 @@ def calculate_excursions(
         ),
     )
 
+
+def calculate_excursion_thresholds(
+    trade: Trade,
+    dataset: HistoricalDataset,
+    timestamp_index: dict[object, int],
+    *,
+    initial_risk_per_unit: Decimal,
+) -> ExcursionThresholds:
+    """Return first OHLC threshold touches for post-trade diagnostics only."""
+
+    if initial_risk_per_unit <= 0:
+        raise ValueError("Initial risk per unit must be positive.")
+    held = _held_candles(trade, dataset, timestamp_index)
+
+    def first_positive(threshold: Decimal) -> int | None:
+        price = trade.entry_price + initial_risk_per_unit * threshold
+        return next(
+            (
+                index
+                for index, candle in enumerate(held, start=1)
+                if candle.high >= price
+            ),
+            None,
+        )
+
+    def reached_negative(threshold: Decimal) -> bool:
+        price = trade.entry_price - initial_risk_per_unit * threshold
+        return any(candle.low <= price for candle in held)
+
+    half = first_positive(Decimal("0.5"))
+    one = first_positive(Decimal("1"))
+    one_and_half = first_positive(Decimal("1.5"))
+    two = first_positive(Decimal("2"))
+    return ExcursionThresholds(
+        reached_positive_half_r=half is not None,
+        reached_positive_one_r=one is not None,
+        reached_positive_one_and_half_r=one_and_half is not None,
+        reached_positive_two_r=two is not None,
+        reached_negative_half_r=reached_negative(Decimal("0.5")),
+        reached_negative_one_r=reached_negative(Decimal("1")),
+        bars_to_positive_half_r=half,
+        bars_to_positive_one_r=one,
+    )
