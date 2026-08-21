@@ -1,0 +1,76 @@
+{
+  "blind_holdout_consumed": false,
+  "blind_holdout_evaluated": false,
+  "blind_holdout_revealed": false,
+  "blind_holdout_status": "LOCKED_BLIND_HOLDOUT",
+  "comparison_policy": {
+    "combined_frictionless_expectancy": "H8 > H5_Q25",
+    "combined_net_expectancy": "H8 > H5_Q25",
+    "cost_stress": "H8 net expectancy >= H5_Q25 under identical doubled costs",
+    "frictionless_window_consistency": "H8 beats H5_Q25 in >=60% eligible windows",
+    "maximum_drawdown": "H8 <= 1.25 times H5_Q25 maximum drawdown",
+    "net_window_consistency": "H8 beats H5_Q25 in >=60% eligible windows",
+    "profit_factor": "H8 >= H5_Q25",
+    "reference": "H5_Q25",
+    "trade_count_ratio": "H8 trades >= 80% of H5_Q25 trades"
+  },
+  "configuration_sha256": "369586c25375c0efd1612cde617e6da7c2c4c4396120fecb015568de5e52164f",
+  "created_at": "2026-08-21T08:21:38.174495+00:00",
+  "criteria": {
+    "consistency_percent_required": "60",
+    "maximum_drawdown_worse_ratio": "1.25",
+    "minimum_eligible_windows": 11,
+    "minimum_trade_count_ratio": "0.80"
+  },
+  "dataset_status": "CONSUMED_RESEARCH_DATA",
+  "definition": {
+    "activation_timing": "NEXT_BAR_AFTER_CLOSED_TRIGGER",
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "hypothesis_id": "H8",
+    "name": "+1R Price Break-Even Protection",
+    "partial_exit": false,
+    "preserve_h5_q25_entries": true,
+    "preserve_original_atr_stop_until_activation": true,
+    "preserve_take_profit": true,
+    "protective_stop": "ENTRY_PRICE",
+    "protective_stop_semantics": "PRICE_BREAK_EVEN_NOT_NET_BREAK_EVEN",
+    "take_profit_r": "2.0",
+    "trigger_r": "1.0"
+  },
+  "next_stage_eligibility": {
+    "all_support_gates_required": true,
+    "combined_net_expectancy_r": "> 0",
+    "positive_net_windows_percent": ">= 60",
+    "profit_factor": "> 1"
+  },
+  "rationale": {
+    "interpretation": "A meaningful subset of losing H5_Q25 trades first achieved +1R favorable excursion before reversing.",
+    "losing_trades_reached_positive_1R_percent": "21.25984251968503937007874016",
+    "stop_loss_trades_reached_positive_1R_percent": "20.20202020202020202020202020"
+  },
+  "reference_candidate": "H5_Q25",
+  "reference_trade_count": 197,
+  "required_counterfactual_diagnostics": [
+    "protective_stop_activated_trades",
+    "protective_stop_exit_trades",
+    "baseline_stop_losses_improved",
+    "baseline_take_profits_cut_early",
+    "net_R_saved_by_protection",
+    "gross_R_saved_by_protection",
+    "average_R_of_protective_exits"
+  ],
+  "research_integrity": {
+    "ATR_stop_changes_before_activation": false,
+    "alternative_trigger_R_values": false,
+    "blind_holdout_access": false,
+    "entry_logic_changes": false,
+    "parameter_search": false,
+    "partial_exit_research": false,
+    "target_changes": false,
+    "trailing_stop_research": false
+  },
+  "run_id": "369586c25375c0ef",
+  "source_v331_diagnostic_run_id": "ef593be9a0bb2697",
+  "source_v33_run_id": "b104ea78b4c88bcf",
+  "version": "3.3.2"
+}
