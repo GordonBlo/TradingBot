@@ -40,6 +40,11 @@ StopUpdateProvider = Callable[
     ProtectiveStopUpdate | None,
 ]
 
+PositionExitProvider = Callable[
+    [BacktestContext, OpenPositionSnapshot],
+    OrderIntent | None,
+]
+
 class _HistoricalView(Sequence[Candle]):
     """Read-only sequence ending at the current candle, never beyond it."""
 
@@ -184,6 +189,7 @@ class BacktestEngine:
         decisions: DecisionProvider,
         *,
         stop_updates: StopUpdateProvider | None = None,
+        position_exits: PositionExitProvider | None = None,
     ) -> BacktestResult:
         """Run once, consuming each closed candle in chronological order."""
 
@@ -266,6 +272,37 @@ class BacktestEngine:
                 account=snapshot,
             )
             intent = decisions(context)
+
+            # Additional position-exit mechanisms may act only when
+            # the frozen baseline strategy would otherwise HOLD.
+            # Existing TREND/TIME exits keep precedence.
+            if (
+                intent is None
+                and position_exits is not None
+                and account.position is not None
+                and index + 1 < len(candles)
+            ):
+                position_snapshot = account.open_position_snapshot()
+                assert position_snapshot is not None
+
+                exit_intent = position_exits(
+                    context,
+                    position_snapshot,
+                )
+
+                if exit_intent is not None:
+                    if not isinstance(exit_intent, OrderIntent):
+                        raise InvalidOrderIntentError(
+                            "Position-exit provider must return "
+                            "OrderIntent or None."
+                        )
+
+                    if exit_intent.action is not OrderAction.SELL:
+                        raise InvalidOrderIntentError(
+                            "Position-exit provider may only return SELL."
+                        )
+
+                    intent = exit_intent
 
             if intent is not None:
                 if not isinstance(intent, OrderIntent):

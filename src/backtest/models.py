@@ -35,6 +35,7 @@ class ExitReason(str, Enum):
     BREAK_EVEN_STOP = "BREAK_EVEN_STOP"
     TAKE_PROFIT = "TAKE_PROFIT"
     END_OF_BACKTEST = "END_OF_BACKTEST"
+    EARLY_FAILURE_EXIT = "EARLY_FAILURE_EXIT"
 
 
 class AmbiguousBarPolicy(str, Enum):

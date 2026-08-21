@@ -7,7 +7,11 @@ from datetime import datetime
 from decimal import Decimal
 
 from src.analysis.indicators import IndicatorEngine
-from src.backtest.engine import BacktestEngine, StopUpdateProvider
+from src.backtest.engine import (
+    BacktestEngine,
+    PositionExitProvider,
+    StopUpdateProvider,
+)
 from src.backtest.execution import basis_points_rate
 from src.backtest.models import (
     BacktestConfig,
@@ -161,6 +165,7 @@ def evaluate_strategy_period(
     backtest_config: BacktestConfig,
     evaluation_start_index: int = 0,
     stop_updates : StopUpdateProvider | None = None,
+    position_exits: PositionExitProvider | None = None,
 ) -> StrategyPeriodEvaluation:
     adapter = StrategyDecisionAdapter(
         dataset=dataset,
@@ -173,6 +178,7 @@ def evaluate_strategy_period(
         dataset,
         adapter,
         stop_updates=stop_updates,
+        position_exits=position_exits
         )
     if evaluation_start_index:
         evaluation_dataset = HistoricalDataset(
