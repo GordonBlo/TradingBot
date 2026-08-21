@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from src.backtest.models import AccountSnapshot, ExitReason, Trade
+from src.backtest.models import (
+    AccountSnapshot,
+    ExitReason,
+    OpenPositionSnapshot,
+    Trade,
+)
 
 
 class BacktestAccountError(RuntimeError):
@@ -33,6 +38,7 @@ class Position:
     entry_fee: Decimal
     stop_loss: Decimal | None
     take_profit: Decimal | None
+    stop_exit_reason: ExitReason
 
 
 class BacktestAccount:
@@ -91,6 +97,7 @@ class BacktestAccount:
             entry_fee=fee,
             stop_loss=stop_loss,
             take_profit=take_profit,
+            stop_exit_reason=ExitReason.STOP_LOSS,
         )
         self._next_trade_id += 1
         self.cash -= total_debit
@@ -98,6 +105,69 @@ class BacktestAccount:
         self.fees_paid += fee
         self.position = position
         return position
+
+    def open_position_snapshot(self) -> OpenPositionSnapshot | None:
+        position = self.position
+
+        if position is None:
+            return None
+
+        return OpenPositionSnapshot(
+            trade_id=position.trade_id,
+            entry_price=position.entry_price,
+            stop_loss=position.stop_loss,
+            take_profit=position.take_profit,
+        )
+
+    def update_long_stop_loss(
+        self,
+        *,
+        stop_loss: Decimal,
+        exit_reason: ExitReason,
+    ) -> None:
+        position = self.position
+
+        if position is None:
+            raise InvalidOrderIntentError(
+                "There is no long Spot position to protect."
+            )
+
+        stop_loss = Decimal(str(stop_loss))
+
+        if stop_loss <= 0:
+            raise InvalidOrderIntentError(
+                "Protective stop must be positive."
+            )
+
+        if not isinstance(exit_reason, ExitReason):
+            exit_reason = ExitReason(exit_reason)
+
+        if exit_reason not in {
+            ExitReason.STOP_LOSS,
+            ExitReason.BREAK_EVEN_STOP,
+        }:
+            raise InvalidOrderIntentError(
+                "Invalid protective stop exit reason."
+            )
+
+        if (
+            position.stop_loss is not None
+            and stop_loss < position.stop_loss
+        ):
+            raise InvalidOrderIntentError(
+                "Long protective stop cannot be loosened."
+            )
+
+        if (
+            position.take_profit is not None
+            and stop_loss >= position.take_profit
+        ):
+            raise InvalidOrderIntentError(
+                "Protective stop must remain below take-profit."
+            )
+
+        position.stop_loss = stop_loss
+        position.stop_exit_reason = exit_reason
 
     def close_long(
         self,

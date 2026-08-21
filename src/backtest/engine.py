@@ -21,9 +21,11 @@ from src.backtest.models import (
     BacktestResult,
     EquityPoint,
     ExitReason,
+    OpenPositionSnapshot,
     OrderAction,
     OrderIntent,
     Trade,
+    ProtectiveStopUpdate,
 )
 from src.historical.dataset import HistoricalDataset
 from src.historical.validator import DatasetValidator
@@ -33,6 +35,10 @@ from src.models.candle import Candle
 
 DecisionProvider = Callable[[BacktestContext], OrderIntent | None]
 
+StopUpdateProvider = Callable[
+    [BacktestContext, OpenPositionSnapshot],
+    ProtectiveStopUpdate | None,
+]
 
 class _HistoricalView(Sequence[Candle]):
     """Read-only sequence ending at the current candle, never beyond it."""
@@ -73,6 +79,10 @@ class _PendingIntent:
     intent: OrderIntent
     signal_time: datetime
 
+@dataclass(frozen=True, slots=True)
+class _PendingStopUpdate:
+    trade_id: str
+    update: ProtectiveStopUpdate
 
 class BacktestEngine:
     """Replay validated candles without any network/exchange dependency."""
@@ -172,6 +182,8 @@ class BacktestEngine:
         self,
         dataset: HistoricalDataset,
         decisions: DecisionProvider,
+        *,
+        stop_updates: StopUpdateProvider | None = None,
     ) -> BacktestResult:
         """Run once, consuming each closed candle in chronological order."""
 
@@ -185,6 +197,7 @@ class BacktestEngine:
         trades: list[Trade] = []
         equity_curve: list[EquityPoint] = []
         pending: _PendingIntent | None = None
+        pending_stop_update: _PendingStopUpdate | None = None
         exposed_bars = 0
 
         for index, candle in enumerate(candles):
@@ -194,6 +207,19 @@ class BacktestEngine:
                     trades.append(completed)
                 pending = None
 
+            if pending_stop_update is not None:
+                position = account.position
+                if (
+                    position is not None
+                    and position.trade_id
+                    == pending_stop_update.trade_id
+                ):
+                    account.update_long_stop_loss(
+                        stop_loss=pending_stop_update.update.stop_loss,
+                        exit_reason=pending_stop_update.update.exit_reason,
+                    )
+                pending_stop_update = None
+
             was_exposed = account.position is not None
             position = account.position
             if position is not None:
@@ -201,6 +227,7 @@ class BacktestEngine:
                     candle,
                     stop_loss=position.stop_loss,
                     take_profit=position.take_profit,
+                    stop_exit_reason=position.stop_exit_reason,
                 )
                 if protective is not None:
                     fill_price = self._execution.sell_fill_price(
@@ -239,18 +266,49 @@ class BacktestEngine:
                 account=snapshot,
             )
             intent = decisions(context)
-            if intent is None:
-                continue
-            if not isinstance(intent, OrderIntent):
-                raise InvalidOrderIntentError(
-                    "Decision provider must return OrderIntent or None."
+
+            if intent is not None:
+                if not isinstance(intent, OrderIntent):
+                    raise InvalidOrderIntentError(
+                        "Decision provider must return OrderIntent or None."
+                    )
+
+                self._validate_state_intent(intent, account)
+
+                if index + 1 < len(candles):
+                    pending = _PendingIntent(
+                        intent,
+                        next_open_time(
+                            candle.timestamp,
+                            dataset.interval,
+                        ),
+                    )
+
+            if (
+                stop_updates is not None
+                and account.position is not None
+                and index + 1 < len(candles)
+            ):
+                position_snapshot = account.open_position_snapshot()
+                assert position_snapshot is not None
+
+                update = stop_updates(
+                    context,
+                    position_snapshot,
                 )
-            self._validate_state_intent(intent, account)
-            if index + 1 < len(candles):
-                pending = _PendingIntent(
-                    intent,
-                    next_open_time(candle.timestamp, dataset.interval),
-                )
+
+                if update is not None:
+                    if not isinstance(update, ProtectiveStopUpdate):
+                        raise InvalidOrderIntentError(
+                            "Stop-update provider must return "
+                            "ProtectiveStopUpdate or None."
+                        )
+
+                    pending_stop_update = _PendingStopUpdate(
+                        trade_id=position_snapshot.trade_id,
+                        update=update,
+                    )
+    
 
         if account.position is not None:
             final_candle = candles[-1]

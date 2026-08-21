@@ -32,6 +32,7 @@ class ExitReason(str, Enum):
     TREND_EXIT = "TREND_EXIT"
     TIME_EXIT = "TIME_EXIT"
     STOP_LOSS = "STOP_LOSS"
+    BREAK_EVEN_STOP = "BREAK_EVEN_STOP"
     TAKE_PROFIT = "TAKE_PROFIT"
     END_OF_BACKTEST = "END_OF_BACKTEST"
 
@@ -157,6 +158,45 @@ class AccountSnapshot:
     has_position: bool
     bars_in_position: int = 0
     completed_trade_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class OpenPositionSnapshot:
+    trade_id: str
+    entry_price: Decimal
+    stop_loss: Decimal | None
+    take_profit: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProtectiveStopUpdate:
+    stop_loss: Decimal
+    exit_reason: ExitReason
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "stop_loss",
+            _decimal("stop_loss", self.stop_loss),
+        )
+
+        if self.stop_loss <= 0:
+            raise ValueError("Protective stop must be greater than zero.")
+
+        if not isinstance(self.exit_reason, ExitReason):
+            object.__setattr__(
+                self,
+                "exit_reason",
+                ExitReason(self.exit_reason),
+            )
+
+        if self.exit_reason not in {
+            ExitReason.STOP_LOSS,
+            ExitReason.BREAK_EVEN_STOP,
+        }:
+            raise ValueError(
+                "Protective stop update requires a protective exit reason."
+            )
 
 
 @dataclass(frozen=True, slots=True)

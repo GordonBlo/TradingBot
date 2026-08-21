@@ -70,6 +70,7 @@ class SimulatedExecutionModel:
         *,
         stop_loss: Decimal | None,
         take_profit: Decimal | None,
+        stop_exit_reason: ExitReason = ExitReason.STOP_LOSS,
     ) -> ProtectiveExit | None:
         stop_touched = stop_loss is not None and candle.low <= stop_loss
         target_touched = take_profit is not None and candle.high >= take_profit
@@ -79,12 +80,12 @@ class SimulatedExecutionModel:
             if self.ambiguous_bar_policy is not AmbiguousBarPolicy.STOP_FIRST:
                 raise ValueError("Unsupported ambiguous-bar policy.")
             return ProtectiveExit(
-                ExitReason.STOP_LOSS,
+                stop_exit_reason,
                 min(candle.open, stop_loss),
             )
         if stop_touched:
             return ProtectiveExit(
-                ExitReason.STOP_LOSS,
+                stop_exit_reason,
                 min(candle.open, stop_loss),
             )
         return ProtectiveExit(
