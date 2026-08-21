@@ -20,3 +20,6 @@ reports/audits/
 .pytest_runtime/
 
 reports/v3_3_h5/
+
+# Generated research reports
+reports/
