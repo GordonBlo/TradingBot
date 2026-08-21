@@ -1,0 +1,102 @@
+{
+  "baseline_id": "V4_H0",
+  "capital": {
+    "max_capital_usdc": "50",
+    "position_sizing": "EXISTING_BACKTEST_POSITION_SIZING",
+    "risk_per_trade_percent": "0.50"
+  },
+  "costs": {
+    "base": {
+      "fee_bps_per_side": "10",
+      "slippage_bps_per_side": "2"
+    },
+    "stress_2x": {
+      "fee_bps_per_side": "20",
+      "slippage_bps_per_side": "4"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": 11,
+    "research_data_status": "CONSUMED_RESEARCH_DATA"
+  },
+  "definition_sha256": "ba79975004b106a513179ae997d3a266e4074cbbefa07e6750b5f81219b8fc22",
+  "entry": {
+    "current_candle_excluded_from_reference": true,
+    "execution": "NEXT_BAR_OPEN",
+    "lookback_bars": 20,
+    "mechanism": "PRICE_BREAKOUT",
+    "reference": "HIGHEST_HIGH_OF_PREVIOUS_20_FULLY_CLOSED_CANDLES",
+    "trigger": "CURRENT_CLOSED_CANDLE_CLOSE_GREATER_THAN_REFERENCE_HIGH"
+  },
+  "evaluation": {
+    "primary_metric": "NET_EXPECTANCY_R",
+    "report": [
+      "TRADES",
+      "FRICTIONLESS_EXPECTANCY_R",
+      "NET_EXPECTANCY_R",
+      "PROFIT_FACTOR_R",
+      "POSITIVE_NET_WINDOWS",
+      "MAXIMUM_DRAWDOWN_PERCENT",
+      "STRESS_2X_NET_EXPECTANCY_R",
+      "TRADES_PER_DAY",
+      "NET_R_PER_DAY"
+    ]
+  },
+  "filters": {
+    "atr_percentile_filter": false,
+    "ema_filter": false,
+    "rsi_filter": false,
+    "trend_regime_filter": false,
+    "volume_filter": false
+  },
+  "forbidden_during_v4_h0": [
+    "BREAKOUT_LOOKBACK_PARAMETER_SEARCH",
+    "ATR_PERIOD_PARAMETER_SEARCH",
+    "STOP_MULTIPLE_PARAMETER_SEARCH",
+    "TAKE_PROFIT_PARAMETER_SEARCH",
+    "EMA_FILTER",
+    "RSI_FILTER",
+    "VOLUME_FILTER",
+    "ATR_PERCENTILE_FILTER",
+    "TRAILING_STOP",
+    "BREAK_EVEN_STOP",
+    "EARLY_FAILURE_EXIT",
+    "BLIND_HOLDOUT_ACCESS"
+  ],
+  "market": {
+    "direction": "LONG_ONLY",
+    "interval": "15m",
+    "market_type": "BINANCE_PUBLIC_SPOT",
+    "symbol": "BTCUSDC"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "combined_net_expectancy_r_gt": "0",
+    "positive_net_window_ratio_gte": "0.60",
+    "profit_factor_r_gt": "1",
+    "required_eligible_windows": 11
+  },
+  "research_rule": "V4_H0_IS_EVALUATED_ONCE_WITH_THE_FROZEN_DEFINITION_BEFORE_ANY_NEW_MECHANISM_IS_ADDED",
+  "risk_and_exit": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "atr_period": 14,
+    "cooldown_bars": 4,
+    "initial_stop": "ENTRY_MINUS_2_TIMES_ATR14",
+    "maximum_hold_bars": 96,
+    "reward_risk_ratio": "2",
+    "stop_atr_multiple": "2",
+    "take_profit": "PLUS_2R"
+  },
+  "run_id": "ba79975004b106a5",
+  "strategy_family": "PRICE_BREAKOUT",
+  "version": "4.0"
+}
