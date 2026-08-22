@@ -9,6 +9,7 @@ from src.strategy.models import (
     StrategyDecision,
     TrendMomentumConfig,
 )
+from src.strategy.v4_breakout import V4BreakoutStrategy
 
 __all__ = [
     "BaseStrategy",
@@ -18,4 +19,5 @@ __all__ = [
     "StrategyDecision",
     "TrendMomentumBaselineStrategy",
     "TrendMomentumConfig",
+    "V4BreakoutStrategy",
 ]
