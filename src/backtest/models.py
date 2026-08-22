@@ -84,6 +84,7 @@ class OrderIntent:
     reward_risk_ratio: Decimal | None = None
     max_quote_amount: Decimal | None = None
     exit_reason: ExitReason | None = None
+    minimum_stop_distance_fraction: Decimal | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.action, OrderAction):
@@ -96,6 +97,7 @@ class OrderIntent:
             "stop_distance",
             "reward_risk_ratio",
             "max_quote_amount",
+            "minimum_stop_distance_fraction",
         ):
             value = getattr(self, name)
             if value is not None:
@@ -114,6 +116,13 @@ class OrderIntent:
             self.max_quote_amount,
         )
         uses_risk_sizing = any(value is not None for value in risk_fields)
+        if (
+            self.minimum_stop_distance_fraction is not None
+            and not uses_risk_sizing
+        ):
+            raise ValueError(
+                "minimum_stop_distance_fraction requires risk-sized BUY fields."
+            )
         if self.action is OrderAction.BUY:
             if self.quote_amount is None and not all(
                 value is not None for value in risk_fields
@@ -140,6 +149,7 @@ class OrderIntent:
                 self.stop_loss,
                 self.take_profit,
                 *risk_fields,
+                self.minimum_stop_distance_fraction,
             )
         ):
             raise ValueError("SELL intent exits the full Spot position without brackets.")

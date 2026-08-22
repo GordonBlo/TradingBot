@@ -136,8 +136,14 @@ class BacktestEngine:
                 assert intent.stop_distance is not None
                 assert intent.reward_risk_ratio is not None
                 assert intent.max_quote_amount is not None
+                stop_distance = intent.stop_distance
+                if intent.minimum_stop_distance_fraction is not None:
+                    stop_distance = max(
+                        stop_distance,
+                        fill_price * intent.minimum_stop_distance_fraction,
+                    )
                 risk_notional = (
-                    intent.risk_budget / intent.stop_distance * fill_price
+                    intent.risk_budget / stop_distance * fill_price
                 )
                 quote_notional = min(
                     risk_notional,
@@ -148,13 +154,13 @@ class BacktestEngine:
                     raise InvalidOrderIntentError(
                         "Risk-sized BUY has no affordable positive notional."
                     )
-                stop_loss = fill_price - intent.stop_distance
+                stop_loss = fill_price - stop_distance
                 if stop_loss <= 0:
                     raise InvalidOrderIntentError(
                         "Risk-sized BUY stop would not be positive."
                     )
                 take_profit = fill_price + (
-                    intent.stop_distance * intent.reward_risk_ratio
+                    stop_distance * intent.reward_risk_ratio
                 )
             fee = self._execution.fee(quote_notional)
             account.open_long(

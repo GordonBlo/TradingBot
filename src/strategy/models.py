@@ -30,6 +30,7 @@ class DecisionReason(str, Enum):
     EMA_CROSSOVER_ENTRY = "EMA_CROSSOVER_ENTRY"
     PRICE_BREAKOUT_ENTRY = "PRICE_BREAKOUT_ENTRY"
     EXHAUSTION_RECLAIM_ENTRY = "EXHAUSTION_RECLAIM_ENTRY"
+    MTF_CONTINUATION_ENTRY = "MTF_CONTINUATION_ENTRY"
     TREND_EXIT = "TREND_EXIT"
     TIME_EXIT = "TIME_EXIT"
     COOLDOWN = "COOLDOWN"
@@ -46,6 +47,7 @@ class StrategyDecision:
     reward_risk_ratio: Decimal | None = None
     max_quote_amount: Decimal | None = None
     metadata: Mapping[str, str | int | Decimal | bool] = field(default_factory=dict)
+    minimum_stop_distance_fraction: Decimal | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.action, StrategyAction):
@@ -69,6 +71,7 @@ class StrategyDecision:
             "stop_distance",
             "reward_risk_ratio",
             "max_quote_amount",
+            "minimum_stop_distance_fraction",
         ):
             value = getattr(self, name)
             if value is not None:
@@ -80,8 +83,9 @@ class StrategyDecision:
             value is not None for value in sizing
         ):
             raise ValueError("ENTER_LONG requires all risk-sizing fields.")
-        if self.action is not StrategyAction.ENTER_LONG and any(
-            value is not None for value in sizing
+        if self.action is not StrategyAction.ENTER_LONG and (
+            any(value is not None for value in sizing)
+            or self.minimum_stop_distance_fraction is not None
         ):
             raise ValueError("Only ENTER_LONG can contain risk-sizing fields.")
         object.__setattr__(self, "metadata", dict(self.metadata))

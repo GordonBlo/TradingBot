@@ -61,12 +61,16 @@ class StrategyDecisionAdapter:
         self._strategy = strategy
         self._minimum_action_index = minimum_action_index
         self._fee_rate = basis_points_rate(backtest_config.fee_bps)
+        self._requires_full_history = strategy.requires_full_history
+        if strategy.required_history_bars < 0:
+            raise ValueError("Strategy history requirement cannot be negative.")
         self._history_limit = max(
             strategy_config.fast_ema_period,
             strategy_config.slow_ema_period,
             strategy_config.rsi_period + 1,
             strategy_config.atr_period,
             strategy_config.volume_sma_period,
+            strategy.required_history_bars,
         ) + 1
         self._indicators = IndicatorEngine().calculate_research_series(
             dataset.candles,
@@ -91,7 +95,11 @@ class StrategyDecisionAdapter:
         )
         current = self._indicators[context.index]
         previous = self._indicators[context.index - 1] if context.index > 0 else None
-        history_start = max(0, len(context.history) - self._history_limit)
+        history_start = (
+            0
+            if self._requires_full_history
+            else max(0, len(context.history) - self._history_limit)
+        )
         recent_history = context.history[history_start:]
         strategy_context = StrategyContext(
             timestamp=next_open_time(
@@ -137,6 +145,9 @@ class StrategyDecisionAdapter:
                 stop_distance=decision.stop_distance,
                 reward_risk_ratio=decision.reward_risk_ratio,
                 max_quote_amount=decision.max_quote_amount,
+                minimum_stop_distance_fraction=(
+                    decision.minimum_stop_distance_fraction
+                ),
                 reason=decision.reason,
             )
         exit_reason = (

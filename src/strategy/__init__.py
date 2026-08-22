@@ -11,6 +11,7 @@ from src.strategy.models import (
 )
 from src.strategy.v4_breakout import V4BreakoutStrategy
 from src.strategy.v5_mean_reversion import V5MeanReversionStrategy
+from src.strategy.v6_mtf_continuation import V6MTFContinuationStrategy
 
 __all__ = [
     "BaseStrategy",
@@ -22,4 +23,5 @@ __all__ = [
     "TrendMomentumConfig",
     "V4BreakoutStrategy",
     "V5MeanReversionStrategy",
+    "V6MTFContinuationStrategy",
 ]
