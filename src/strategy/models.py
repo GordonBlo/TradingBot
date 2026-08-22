@@ -29,6 +29,7 @@ class DecisionReason(str, Enum):
     NO_ENTRY = "NO_ENTRY"
     EMA_CROSSOVER_ENTRY = "EMA_CROSSOVER_ENTRY"
     PRICE_BREAKOUT_ENTRY = "PRICE_BREAKOUT_ENTRY"
+    EXHAUSTION_RECLAIM_ENTRY = "EXHAUSTION_RECLAIM_ENTRY"
     TREND_EXIT = "TREND_EXIT"
     TIME_EXIT = "TIME_EXIT"
     COOLDOWN = "COOLDOWN"
@@ -139,4 +140,3 @@ class TrendMomentumConfig:
             raise ValueError("Risk per trade percent must be in (0, 100].")
         if self.maximum_position_notional_usdc <= 0:
             raise ValueError("Maximum position notional must be positive.")
-
