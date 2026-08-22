@@ -1,0 +1,121 @@
+{
+  "baseline_id": "V5_H0",
+  "costs": {
+    "base": {
+      "fee_bps_per_side": "10",
+      "slippage_bps_per_side": "2"
+    },
+    "stress_2x": {
+      "fee_bps_per_side": "20",
+      "slippage_bps_per_side": "4"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": 11,
+    "research_data_status": "CONSUMED_RESEARCH_DATA"
+  },
+  "definition_sha256": "b645b6c1d251f374bdf1d29b56a77a9d097602d8d61e33bb9606f16e16b3edbc",
+  "entry": {
+    "all_conditions_required": true,
+    "conditions": [
+      "CURRENT_LOW_STRICTLY_LESS_THAN_LOWER_BAND",
+      "CURRENT_CLOSE_STRICTLY_GREATER_THAN_LOWER_BAND",
+      "CURRENT_CLOSE_STRICTLY_LESS_THAN_REFERENCE_MEAN"
+    ],
+    "equality_qualifies": false,
+    "execution": "NEXT_BAR_OPEN",
+    "mechanism": "DOWNSIDE_EXHAUSTION_LOWER_BAND_RECLAIM",
+    "signal_candle": "CURRENT_FULLY_CLOSED_CANDLE",
+    "strict_inequalities": true
+  },
+  "evaluation": {
+    "primary_metric": "NET_EXPECTANCY_R",
+    "report": [
+      "TOTAL_TRADES",
+      "FRICTIONLESS_EXPECTANCY_R_PER_TRADE",
+      "NET_EXPECTANCY_R_PER_TRADE",
+      "PROFIT_FACTOR_R",
+      "WIN_RATE",
+      "MAXIMUM_DRAWDOWN_PERCENT",
+      "POSITIVE_NET_WINDOWS_OUT_OF_11",
+      "STRESS_2X_NET_EXPECTANCY_R",
+      "TRADES_PER_DAY",
+      "NET_R_PER_DAY"
+    ]
+  },
+  "filters": {
+    "atr_percentile_filter": false,
+    "breakout_filter": false,
+    "ema_filter": false,
+    "rsi_filter": false,
+    "trend_regime_filter": false,
+    "volume_filter": false
+  },
+  "forbidden_during_v5_h0": [
+    "PARAMETER_SEARCH",
+    "ALTERNATE_REFERENCE_LOOKBACKS",
+    "ALTERNATE_DEVIATION_THRESHOLDS",
+    "EMA_FILTER",
+    "RSI_FILTER",
+    "VOLUME_FILTER",
+    "TREND_REGIME_FILTER",
+    "ATR_PERCENTILE_FILTER",
+    "BREAKOUT_FILTER",
+    "TRAILING_STOP",
+    "BREAK_EVEN_STOP",
+    "EARLY_FAILURE_EXIT",
+    "BLIND_HOLDOUT_ACCESS"
+  ],
+  "market": {
+    "direction": "LONG_ONLY",
+    "interval": "15m",
+    "market_type": "BINANCE_PUBLIC_SPOT",
+    "symbol": "BTCUSDC"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "combined_net_expectancy_r_gt": "0",
+    "minimum_positive_net_windows": 7,
+    "positive_net_window_ratio_gte": "0.60",
+    "profit_factor_r_gt": "1",
+    "required_eligible_windows": 11
+  },
+  "reference_distribution": {
+    "candles": "PREVIOUS_EXACTLY_20_FULLY_CLOSED_CANDLES",
+    "current_candle_excluded": true,
+    "deviation_multiple": "2",
+    "lookback_bars": 20,
+    "lower_band": "REFERENCE_MEAN_MINUS_2_TIMES_REFERENCE_STD",
+    "mean": "ARITHMETIC_MEAN_OF_PREVIOUS_20_CLOSES",
+    "price_field": "CLOSE",
+    "standard_deviation": "POPULATION_STANDARD_DEVIATION",
+    "standard_deviation_ddof": 0,
+    "zero_standard_deviation_rule": "NO_SIGNAL"
+  },
+  "research_rule": "V5_H0_IS_A_NEW_MEAN_REVERSION_MECHANISM_FAMILY_AND_NOT_A_V4_BREAKOUT_TUNING_ATTEMPT",
+  "risk_and_exit": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "atr_period": 14,
+    "break_even_stop": false,
+    "cooldown_bars": 4,
+    "early_failure_exit": false,
+    "initial_stop": "ENTRY_MINUS_2_TIMES_SIGNAL_CANDLE_ATR14",
+    "maximum_hold_bars": 96,
+    "reward_risk_ratio": "2",
+    "stop_atr_multiple": "2",
+    "take_profit": "PLUS_2R",
+    "trailing_stop": false
+  },
+  "run_id": "b645b6c1d251f374",
+  "strategy_family": "EXHAUSTION_RECLAIM_MEAN_REVERSION",
+  "version": "5.0"
+}
