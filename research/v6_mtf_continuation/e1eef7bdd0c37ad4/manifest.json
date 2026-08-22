@@ -1,0 +1,195 @@
+{
+  "anti_overfitting": {
+    "alternatives_forbidden_if_v6_h0_fails": [
+      "1H_INSTEAD_OF_4H",
+      "EMA10_30",
+      "EMA50_200",
+      "COST_DISTANCE_MULTIPLE_3X_OR_5X",
+      "ALTERNATE_ATR_PERIODS",
+      "ALTERNATE_STOP_FLOORS",
+      "ALTERNATE_PULLBACK_EMA",
+      "ALTERNATE_PREVIOUS_HIGH_CONFIRMATION",
+      "ALTERNATE_MAXIMUM_HOLD",
+      "ALTERNATE_COOLDOWN"
+    ],
+    "future_mechanism_change_rule": "SEPARATE_PREREGISTRATION_AND_NEW_HYPOTHESIS_JUSTIFICATION_REQUIRED",
+    "parameter_search": false
+  },
+  "baseline_id": "V6_H0",
+  "costs": {
+    "base": {
+      "fee_bps_per_side": "10",
+      "slippage_bps_per_side": "2"
+    },
+    "stress_2x": {
+      "fee_bps_per_side": "20",
+      "slippage_bps_per_side": "4"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": 11,
+    "research_data_status": "CONSUMED_RESEARCH_DATA"
+  },
+  "definition_sha256": "e1eef7bdd0c37ad4d8ababcb3316adea1a1d5255a6975b3d9063f45804cdcde1",
+  "entry": {
+    "all_conditions_required": true,
+    "conditions": [
+      "PREVIOUS_CLOSE_LESS_THAN_OR_EQUAL_TO_PREVIOUS_EMA20_15M",
+      "CURRENT_CLOSE_STRICTLY_GREATER_THAN_CURRENT_EMA20_15M",
+      "CURRENT_CLOSE_STRICTLY_GREATER_THAN_PREVIOUS_HIGH"
+    ],
+    "current_close_equal_to_current_ema_qualifies": false,
+    "current_close_equal_to_previous_high_qualifies": false,
+    "ema_input": "CLOSED_15M_CANDLES_ONLY",
+    "ema_period_15m": 20,
+    "execution": "NEXT_BAR_OPEN",
+    "higher_timeframe_long_regime_required": true,
+    "intrabar_entry": false,
+    "mechanism": "MTF_PULLBACK_RECLAIM_CONTINUATION",
+    "previous_candle": "PREVIOUS_FULLY_CLOSED_15M_CANDLE",
+    "previous_close_equal_to_previous_ema_qualifies": true,
+    "signal_candle": "CURRENT_FULLY_CLOSED_15M_CANDLE"
+  },
+  "evaluation": {
+    "diagnostics": [
+      "PERCENT_TIME_4H_REGIME_ACTIVE",
+      "COUNT_15M_PULLBACK_RECLAIMS",
+      "COUNT_SURVIVING_PREVIOUS_HIGH_CONFIRMATION",
+      "AVERAGE_INITIAL_STOP_DISTANCE_BPS",
+      "MEDIAN_INITIAL_STOP_DISTANCE_BPS",
+      "PERCENT_STOPS_DETERMINED_BY_ATR14_4H",
+      "PERCENT_STOPS_DETERMINED_BY_96_BPS_COST_FLOOR"
+    ],
+    "diagnostics_are_optimization_gates": false,
+    "primary_metric": "NET_EXPECTANCY_R",
+    "report": [
+      "TOTAL_TRADES",
+      "TRADES_PER_DAY",
+      "FRICTIONLESS_EXPECTANCY_R_PER_TRADE",
+      "NET_EXPECTANCY_R_PER_TRADE",
+      "AVERAGE_FRICTION_R_PER_TRADE",
+      "FRICTION_TO_INITIAL_RISK_RATIO",
+      "PROFIT_FACTOR_R",
+      "WIN_RATE",
+      "AVERAGE_WINNER_R",
+      "AVERAGE_LOSER_R",
+      "PAYOFF_RATIO",
+      "MAXIMUM_DRAWDOWN_PERCENT",
+      "POSITIVE_NET_WINDOWS_OUT_OF_11",
+      "MEDIAN_TRADES_PER_WINDOW",
+      "STRESS_2X_NET_EXPECTANCY_R_PER_TRADE",
+      "NET_R_PER_DAY"
+    ],
+    "stress_2x_is_progression_gate": false
+  },
+  "filters": {
+    "adx_filter": false,
+    "atr_percentile_filter": false,
+    "bollinger_band_filter": false,
+    "breakout_lookback_filter": false,
+    "day_of_week_filter": false,
+    "h5_volatility_band_filter": false,
+    "rsi_filter": false,
+    "time_of_day_filter": false,
+    "v5_statistical_exhaustion_filter": false,
+    "volume_filter": false
+  },
+  "higher_timeframe_construction": {
+    "aggregation": "DETERMINISTIC_15M_TO_4H_OHLCV",
+    "alignment_timezone": "UTC",
+    "boundary_hours_utc": [
+      0,
+      4,
+      8,
+      12,
+      16,
+      20
+    ],
+    "consecutive_source_candles_per_target_candle": 16,
+    "forming_4h_candle_allowed_for_atr": false,
+    "forming_4h_candle_allowed_for_ema": false,
+    "forming_4h_candle_allowed_for_ohlc": false,
+    "forming_4h_candle_allowed_for_regime": false,
+    "future_15m_candle_may_influence_current_regime": false,
+    "only_fully_completed_4h_candles_allowed": true,
+    "source": "EXISTING_15M_DATA",
+    "source_interval": "15m",
+    "target_interval": "4h"
+  },
+  "higher_timeframe_regime": {
+    "all_conditions_required": true,
+    "conditions": [
+      "EMA20_4H_STRICTLY_GREATER_THAN_EMA50_4H",
+      "LATEST_COMPLETED_4H_CLOSE_STRICTLY_GREATER_THAN_EMA20_4H"
+    ],
+    "crossover_event_required": false,
+    "ema_fast_period": 20,
+    "ema_slow_period": 50,
+    "equality_qualifies": false,
+    "indicator_candles": "FULLY_COMPLETED_4H_CANDLES_ONLY",
+    "price_field": "CLOSE",
+    "state_candle": "LATEST_FULLY_COMPLETED_4H_CANDLE"
+  },
+  "market": {
+    "direction": "LONG_ONLY",
+    "execution_interval": "15m",
+    "higher_timeframe_regime_interval": "4h",
+    "higher_timeframe_role": "CONTEXT_ONLY",
+    "market_type": "BINANCE_PUBLIC_SPOT",
+    "signal_candles": "FULLY_CLOSED_15M_CANDLES",
+    "symbol": "BTCUSDC"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "combined_net_expectancy_r_gt": "0",
+    "minimum_positive_net_windows": 7,
+    "positive_net_window_ratio_gte": "0.60",
+    "profit_factor_r_gt": "1",
+    "required_eligible_windows": 11
+  },
+  "research_rule": "V6_H0_IS_A_NEW_COST_AWARE_MTF_CONTINUATION_FAMILY_AND_NOT_POST_HOC_TUNING_OF_V3_V4_OR_V5",
+  "risk_and_exit": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "averaging_down": false,
+    "break_even_stop": false,
+    "cooldown_bars": 4,
+    "early_failure_exit": false,
+    "maximum_hold_bars": 96,
+    "maximum_hold_interval": "15m",
+    "partial_exits": false,
+    "pyramiding": false,
+    "r_definition": "FROZEN_INITIAL_STOP_DISTANCE_FROM_ACTUAL_ENTRY_FILL",
+    "reward_risk_ratio": "2",
+    "strategy_exit_execution": "NEXT_BAR_OPEN_WHERE_EXISTING_ARCHITECTURE_REQUIRES",
+    "take_profit": "ACTUAL_ENTRY_FILL_PLUS_2R",
+    "trailing_stop": false
+  },
+  "run_id": "e1eef7bdd0c37ad4",
+  "strategy_family": "COST_AWARE_MTF_PULLBACK_CONTINUATION",
+  "version": "6.0",
+  "volatility_and_initial_risk": {
+    "atr_interval": "4h",
+    "atr_period": 14,
+    "atr_source": "LATEST_FULLY_COMPLETED_4H_CANDLE_AT_SIGNAL_TIME",
+    "base_round_trip_cost_formula": "2_TIMES_(10_BPS_FEE_PLUS_2_BPS_SLIPPAGE)",
+    "base_round_trip_friction_bps": "24",
+    "cost_distance_multiple": 4,
+    "derivation_is_mechanical_not_optimized": true,
+    "forming_4h_candle_excluded": true,
+    "geometry_intent": "CAP_BASE_FRICTION_RELATIVE_TO_INITIAL_RISK_AT_APPROXIMATELY_0.25R_OR_LESS_BEFORE_GAP_AND_FILL_EFFECTS",
+    "initial_stop": "ACTUAL_ENTRY_FILL_MINUS_INITIAL_STOP_DISTANCE",
+    "initial_stop_distance": "MAX_OF_ATR14_4H_AND_ENTRY_FILL_PRICE_TIMES_0.0096",
+    "minimum_stop_distance_bps": "96",
+    "minimum_stop_distance_derivation": "4_TIMES_24_BPS_EQUALS_96_BPS",
+    "minimum_stop_distance_entry_fraction": "0.0096"
+  }
+}
