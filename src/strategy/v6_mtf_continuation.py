@@ -6,8 +6,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from types import MappingProxyType
+from typing import Mapping
 
-from src.analysis.indicators import atr, ema
+from src.analysis.indicators import IndicatorEngine, atr, ema
 from src.models.candle import Candle
 from src.strategy.base import BaseStrategy
 from src.strategy.context import StrategyContext
@@ -38,6 +40,29 @@ class HigherTimeframeState:
             self.ema_20 > self.ema_50
             and self.latest_candle.close > self.ema_20
         )
+
+
+@dataclass(frozen=True, slots=True)
+class V6PreparedContext:
+    """Immutable causal 4h state lookup for one 15m evaluation stream."""
+
+    completed_4h_candles: tuple[Candle, ...]
+    states_by_timestamp: Mapping[datetime, HigherTimeframeState | None]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "states_by_timestamp",
+            MappingProxyType(dict(self.states_by_timestamp)),
+        )
+
+    def state_at(self, timestamp: datetime) -> HigherTimeframeState | None:
+        try:
+            return self.states_by_timestamp[timestamp]
+        except KeyError as exc:
+            raise ValueError(
+                "V6 prepared context does not contain the signal candle."
+            ) from exc
 
 
 def _utc_timestamp(timestamp: datetime) -> datetime:
@@ -139,6 +164,49 @@ def higher_timeframe_state(
     )
 
 
+def prepare_v6_context(candles: Sequence[Candle]) -> V6PreparedContext:
+    """Build exact causal completed-4h indicator snapshots in O(n)."""
+
+    source = tuple(candles)
+    if not source:
+        return V6PreparedContext((), {})
+    completed = aggregate_completed_4h_candles(
+        source,
+        as_of=source[-1].timestamp,
+    )
+    indicators = IndicatorEngine().calculate_research_series(
+        completed,
+        fast_ema_period=V6MTFContinuationStrategy.HIGHER_TIMEFRAME_FAST_EMA_PERIOD,
+        slow_ema_period=V6MTFContinuationStrategy.HIGHER_TIMEFRAME_SLOW_EMA_PERIOD,
+        atr_period=V6MTFContinuationStrategy.ATR_PERIOD_4H,
+    )
+    ready_states: dict[datetime, HigherTimeframeState | None] = {}
+    for candle, snapshot in zip(completed, indicators, strict=True):
+        completion_timestamp = candle.timestamp + (
+            SOURCE_BAR_DURATION * (SOURCE_BARS_PER_4H_CANDLE - 1)
+        )
+        ready_states[completion_timestamp] = (
+            HigherTimeframeState(
+                latest_candle=candle,
+                ema_20=snapshot.ema_fast,
+                ema_50=snapshot.ema_slow,
+                atr_14=snapshot.atr,
+            )
+            if snapshot.ema_fast is not None
+            and snapshot.ema_slow is not None
+            and snapshot.atr is not None
+            else None
+        )
+
+    by_timestamp: dict[datetime, HigherTimeframeState | None] = {}
+    latest: HigherTimeframeState | None = None
+    for candle in source:
+        if candle.timestamp in ready_states:
+            latest = ready_states[candle.timestamp]
+        by_timestamp[candle.timestamp] = latest
+    return V6PreparedContext(completed, by_timestamp)
+
+
 class V6MTFContinuationStrategy(BaseStrategy):
     """Buy a 15m EMA reclaim only inside a completed-4h uptrend."""
 
@@ -165,7 +233,12 @@ class V6MTFContinuationStrategy(BaseStrategy):
         + SOURCE_BARS_PER_4H_CANDLE
     )
 
-    def __init__(self, config: TrendMomentumConfig) -> None:
+    def __init__(
+        self,
+        config: TrendMomentumConfig,
+        *,
+        prepared_context: V6PreparedContext | None = None,
+    ) -> None:
         frozen = {
             "fast_ema_period": self.PULLBACK_EMA_PERIOD,
             "atr_period": self.ATR_PERIOD_4H,
@@ -177,6 +250,7 @@ class V6MTFContinuationStrategy(BaseStrategy):
             if getattr(config, name) != expected:
                 raise ValueError(f"V6-H0 {name} is frozen at {expected}.")
         self.config = config
+        self._prepared_context = prepared_context
 
     @property
     def required_history_bars(self) -> int:
@@ -215,9 +289,13 @@ class V6MTFContinuationStrategy(BaseStrategy):
                 "Closed 15m EMA20 history unavailable",
             )
 
-        state = higher_timeframe_state(
-            history,
-            as_of=context.current_candle.timestamp,
+        state = (
+            self._prepared_context.state_at(context.current_candle.timestamp)
+            if self._prepared_context is not None
+            else higher_timeframe_state(
+                history,
+                as_of=context.current_candle.timestamp,
+            )
         )
         if state is None:
             return self._hold(

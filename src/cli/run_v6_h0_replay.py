@@ -45,8 +45,9 @@ from src.research.v6_mtf_continuation_stability import (
 )
 from src.strategy.models import StrategyAction, TrendMomentumConfig
 from src.strategy.v6_mtf_continuation import (
+    V6PreparedContext,
     V6MTFContinuationStrategy,
-    higher_timeframe_state,
+    prepare_v6_context,
 )
 from src.utils.logger import configure_logging, get_logger
 
@@ -304,6 +305,7 @@ def _stop_observations(
     *,
     trades: tuple[Trade, ...],
     dataset: HistoricalDataset,
+    prepared_context: V6PreparedContext,
 ) -> tuple[StopObservation, ...]:
     signal_candles = {
         next_open_time(candle.timestamp, dataset.interval): candle
@@ -317,10 +319,7 @@ def _stop_observations(
             raise ValueError(
                 f"V6-H0 signal candle missing for {trade.trade_id}."
             ) from exc
-        state = higher_timeframe_state(
-            dataset.candles,
-            as_of=signal_candle.timestamp,
-        )
+        state = prepared_context.state_at(signal_candle.timestamp)
         if state is None:
             raise ValueError(f"V6-H0 4h ATR missing for {trade.trade_id}.")
         output.append(
@@ -366,10 +365,14 @@ def _evaluate_window(
     window: ResearchWindow,
     strategy_config: TrendMomentumConfig,
     backtest_config: BacktestConfig,
+    prepared_context: V6PreparedContext,
 ):
     evaluation = evaluate_strategy_period(
         window.replay_dataset,
-        strategy=V6MTFContinuationStrategy(strategy_config),
+        strategy=V6MTFContinuationStrategy(
+            strategy_config,
+            prepared_context=prepared_context,
+        ),
         strategy_config=strategy_config,
         backtest_config=backtest_config,
         evaluation_start_index=window.evaluation_start_index,
@@ -377,6 +380,7 @@ def _evaluate_window(
     observations = _stop_observations(
         trades=evaluation.backtest.trades,
         dataset=window.replay_dataset,
+        prepared_context=prepared_context,
     )
     risk_records = build_risk_capital_audit(
         trades=evaluation.backtest.trades,
@@ -661,10 +665,12 @@ def main(argv: list[str] | None = None) -> int:
         final_buy_signals = 0
 
         for window in eligible_windows:
+            prepared_context = prepare_v6_context(window.replay_dataset.candles)
             evaluation, records, summary, observations = _evaluate_window(
                 window=window,
                 strategy_config=strategy_config,
                 backtest_config=base_config,
+                prepared_context=prepared_context,
             )
             row = _window_result(
                 window=window, evaluation=evaluation, summary=summary
@@ -688,12 +694,11 @@ def main(argv: list[str] | None = None) -> int:
                 row.profit_factor_r,
                 row.positive_net,
             )
-
-        for window in eligible_windows:
             _, records, _, _ = _evaluate_window(
                 window=window,
                 strategy_config=strategy_config,
                 backtest_config=stress_config,
+                prepared_context=prepared_context,
             )
             stress_window_records.append(records)
 
