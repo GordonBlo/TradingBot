@@ -55,6 +55,12 @@ class OrderFlowBucketStore:
             raise ValueError("V7 order-flow foundation supports BTCUSDC only.")
         return self.root / symbol / "orderflow.csv"
 
+    def partition_path(self, year: int, month: int, symbol: str = "BTCUSDC") -> Path:
+        symbol = symbol.strip().upper()
+        if symbol != "BTCUSDC" or not 1 <= month <= 12:
+            raise ValueError("Invalid V7 order-flow partition.")
+        return self.root / symbol / f"{year:04d}" / f"{month:02d}" / "orderflow.csv"
+
     @staticmethod
     def _row(bucket: OrderFlowBucket) -> dict[str, str | int]:
         values: dict[str, str | int] = {
@@ -77,6 +83,23 @@ class OrderFlowBucketStore:
         symbol: str = "BTCUSDC",
     ) -> Path:
         path = self.path(symbol)
+        return self._save_path(path, buckets)
+
+    def save_partition(
+        self,
+        buckets: list[OrderFlowBucket] | tuple[OrderFlowBucket, ...],
+        *,
+        year: int,
+        month: int,
+        symbol: str = "BTCUSDC",
+    ) -> Path:
+        return self._save_path(self.partition_path(year, month, symbol), buckets)
+
+    def _save_path(
+        self,
+        path: Path,
+        buckets: list[OrderFlowBucket] | tuple[OrderFlowBucket, ...],
+    ) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".csv.tmp")
         try:

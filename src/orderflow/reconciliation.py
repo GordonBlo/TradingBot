@@ -227,6 +227,20 @@ def reconcile_orderflow_day(
         raise OrderFlowValidationError("Expected exactly 96 order-flow and kline buckets.")
     if len(local_candles) != EXPECTED_BUCKETS:
         raise OrderFlowValidationError("Expected exactly 96 existing local candles.")
+    return reconcile_orderflow_dataset(buckets, klines, local_candles)
+
+
+def reconcile_orderflow_dataset(
+    buckets: tuple[OrderFlowBucket, ...],
+    klines: tuple[BinanceKlineFlow, ...],
+    local_candles: tuple[Candle, ...],
+    *,
+    include_bucket_rows: bool = True,
+) -> ReconciliationResult:
+    if not buckets or len(buckets) != len(klines) or len(buckets) != len(local_candles):
+        raise OrderFlowValidationError(
+            "Order-flow, kline, and local-candle coverage counts differ."
+        )
     bucket_times = tuple(item.bucket_open_time for item in buckets)
     if bucket_times != tuple(item.open_time for item in klines) or bucket_times != tuple(
         item.timestamp for item in local_candles
@@ -342,7 +356,7 @@ def reconcile_orderflow_day(
             },
         }
         for index, (bucket, kline) in enumerate(zip(buckets, klines, strict=True))
-    )
+    ) if include_bucket_rows else ()
     return ReconciliationResult(
         classification="VALIDATED" if not discrepancies else "VALIDATION_FAILED",
         bucket_count=len(buckets),

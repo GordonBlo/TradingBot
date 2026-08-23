@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Iterable, Iterator
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -130,7 +131,7 @@ class _Accumulator:
             self.taker_sell_aggtrade_count += 1
 
 
-def _bucket_open(timestamp: datetime) -> datetime:
+def bucket_open_15m(timestamp: datetime) -> datetime:
     delta = timestamp - _EPOCH
     total_microseconds = (
         (delta.days * 86_400 + delta.seconds) * 1_000_000 + delta.microseconds
@@ -145,30 +146,42 @@ def aggregate_15m(
     trades: list[AggregateTrade] | tuple[AggregateTrade, ...],
 ) -> tuple[OrderFlowBucket, ...]:
     validate_trade_segment(trades)
-    grouped: dict[datetime, _Accumulator] = {}
+    return tuple(iter_aggregate_15m(trades))
+
+
+def _finish_bucket(open_time: datetime, values: _Accumulator) -> OrderFlowBucket:
+    return OrderFlowBucket(
+        bucket_open_time=open_time,
+        bucket_close_time=open_time + _BUCKET_SIZE,
+        aggregate_trade_count=values.aggregate_trade_count,
+        underlying_trade_count=values.underlying_trade_count,
+        total_base_volume=values.total_base_volume,
+        total_quote_volume=values.total_quote_volume,
+        taker_buy_base_volume=values.taker_buy_base_volume,
+        taker_buy_quote_volume=values.taker_buy_quote_volume,
+        taker_buy_aggtrade_count=values.taker_buy_aggtrade_count,
+        taker_sell_base_volume=values.taker_sell_base_volume,
+        taker_sell_quote_volume=values.taker_sell_quote_volume,
+        taker_sell_aggtrade_count=values.taker_sell_aggtrade_count,
+    )
+
+
+def iter_aggregate_15m(trades: Iterable[AggregateTrade]) -> Iterator[OrderFlowBucket]:
+    """Aggregate a chronological stream while retaining only one open bucket."""
+
+    current_open: datetime | None = None
+    values = _Accumulator()
     for trade in trades:
-        open_time = _bucket_open(trade.timestamp)
-        grouped.setdefault(open_time, _Accumulator()).add(trade)
-    buckets: list[OrderFlowBucket] = []
-    for open_time in sorted(grouped):
-        values = grouped[open_time]
-        buckets.append(
-            OrderFlowBucket(
-                bucket_open_time=open_time,
-                bucket_close_time=open_time + _BUCKET_SIZE,
-                aggregate_trade_count=values.aggregate_trade_count,
-                underlying_trade_count=values.underlying_trade_count,
-                total_base_volume=values.total_base_volume,
-                total_quote_volume=values.total_quote_volume,
-                taker_buy_base_volume=values.taker_buy_base_volume,
-                taker_buy_quote_volume=values.taker_buy_quote_volume,
-                taker_buy_aggtrade_count=values.taker_buy_aggtrade_count,
-                taker_sell_base_volume=values.taker_sell_base_volume,
-                taker_sell_quote_volume=values.taker_sell_quote_volume,
-                taker_sell_aggtrade_count=values.taker_sell_aggtrade_count,
-            )
-        )
-    return tuple(buckets)
+        open_time = bucket_open_15m(trade.timestamp)
+        if current_open is not None and open_time < current_open:
+            raise ValueError("Aggregate-trade stream is not chronological.")
+        if current_open is not None and open_time != current_open:
+            yield _finish_bucket(current_open, values)
+            values = _Accumulator()
+        current_open = open_time
+        values.add(trade)
+    if current_open is not None:
+        yield _finish_bucket(current_open, values)
 
 
 def completed_bucket_at(

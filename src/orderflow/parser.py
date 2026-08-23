@@ -5,12 +5,11 @@ from __future__ import annotations
 import csv
 import io
 import zipfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TextIO
 
-from src.orderflow.integrity import validate_trade_segment
 from src.orderflow.models import AggregateTrade
 from src.orderflow.timestamps import BinanceTimestampError, normalize_binance_timestamp
 
@@ -103,10 +102,18 @@ def _parse_row(values: list[str]) -> AggregateTrade:
 def parse_aggtrade_csv(
     stream: TextIO | Iterable[str], *, source: str = "<stream>"
 ) -> tuple[AggregateTrade, ...]:
+    return tuple(iter_aggtrade_csv(stream, source=source))
+
+
+def iter_aggtrade_csv(
+    stream: TextIO | Iterable[str], *, source: str = "<stream>"
+) -> Iterator[AggregateTrade]:
+    """Yield validated rows without retaining an archive-sized trade tuple."""
+
     reader = csv.reader(stream)
-    trades: list[AggregateTrade] = []
     mapping: tuple[int, ...] | None = None
     first_content_seen = False
+    previous: AggregateTrade | None = None
     for row_number, row in enumerate(reader, start=1):
         if not row or all(not item.strip() for item in row):
             continue
@@ -122,16 +129,18 @@ def parse_aggtrade_csv(
                     ordered.append(row[mapping[-1]])
             else:
                 ordered = row
-            trades.append(_parse_row(ordered))
+            trade = _parse_row(ordered)
+            if previous is not None:
+                if trade.timestamp < previous.timestamp:
+                    raise ValueError("Aggregate-trade timestamp decreases.")
+                if trade.aggregate_trade_id <= previous.aggregate_trade_id:
+                    raise ValueError("aggregate_trade_id is not increasing.")
+            previous = trade
+            yield trade
         except (IndexError, ValueError) as exc:
             raise AggregateTradeParseError(
                 f"{source}: row {row_number}: {exc}"
             ) from exc
-    try:
-        validate_trade_segment(trades)
-    except ValueError as exc:
-        raise AggregateTradeParseError(f"{source}: {exc}") from exc
-    return tuple(trades)
 
 
 def parse_aggtrade_file(path: str | Path) -> tuple[AggregateTrade, ...]:
@@ -148,6 +157,10 @@ def parse_aggtrade_file(path: str | Path) -> tuple[AggregateTrade, ...]:
 def parse_aggtrade_archive(path: str | Path) -> tuple[AggregateTrade, ...]:
     """Parse the single CSV member of a checksum-verified Binance ZIP archive."""
 
+    return tuple(iter_aggtrade_archive(path))
+
+
+def iter_aggtrade_archive(path: str | Path) -> Iterator[AggregateTrade]:
     archive_path = Path(path)
     try:
         with zipfile.ZipFile(archive_path) as archive:
@@ -162,7 +175,7 @@ def parse_aggtrade_archive(path: str | Path) -> tuple[AggregateTrade, ...]:
                 )
             with archive.open(members[0]) as raw:
                 with io.TextIOWrapper(raw, encoding="utf-8-sig", newline="") as stream:
-                    return parse_aggtrade_csv(
+                    yield from iter_aggtrade_csv(
                         stream, source=f"{archive_path}!{members[0]}"
                     )
     except AggregateTradeParseError:

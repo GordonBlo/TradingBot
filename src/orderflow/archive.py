@@ -66,6 +66,7 @@ def build_archive_location(
 def build_kline_archive_location(
     period: date,
     *,
+    cadence: str = "daily",
     interval: str = "15m",
     symbol: str = "BTCUSDC",
     root: str | Path = "data/orderflow/raw",
@@ -75,18 +76,24 @@ def build_kline_archive_location(
     symbol = symbol.strip().upper()
     if symbol != "BTCUSDC" or interval != "15m":
         raise ValueError("V7 validation supports BTCUSDC 15m only.")
-    filename = f"{symbol}-{interval}-{period.isoformat()}.zip"
+    if cadence == "daily":
+        period_text = period.isoformat()
+        destination_tail = ("daily", f"{period.year:04d}", f"{period.month:02d}")
+    elif cadence == "monthly":
+        period_text = f"{period.year:04d}-{period.month:02d}"
+        destination_tail = ("monthly", f"{period.year:04d}")
+    else:
+        raise ValueError("Archive cadence must be 'daily' or 'monthly'.")
+    filename = f"{symbol}-{interval}-{period_text}.zip"
     url = (
-        "https://data.binance.vision/data/spot/daily/klines/"
+        f"https://data.binance.vision/data/spot/{cadence}/klines/"
         f"{symbol}/{interval}/{filename}"
     )
     destination = (
         Path(root)
         / symbol
         / "validation_klines"
-        / "daily"
-        / f"{period.year:04d}"
-        / f"{period.month:02d}"
+        / Path(*destination_tail)
         / filename
     )
     return ArchiveLocation(
