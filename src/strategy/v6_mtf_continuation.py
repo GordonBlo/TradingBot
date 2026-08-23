@@ -11,6 +11,7 @@ from typing import Mapping
 
 from src.analysis.indicators import IndicatorEngine, atr, ema
 from src.models.candle import Candle
+from src.models.research_indicator_snapshot import ResearchIndicatorSnapshot
 from src.strategy.base import BaseStrategy
 from src.strategy.context import StrategyContext
 from src.strategy.models import (
@@ -48,12 +49,20 @@ class V6PreparedContext:
 
     completed_4h_candles: tuple[Candle, ...]
     states_by_timestamp: Mapping[datetime, HigherTimeframeState | None]
+    indicators_15m_by_timestamp: Mapping[
+        datetime, ResearchIndicatorSnapshot
+    ]
 
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
             "states_by_timestamp",
             MappingProxyType(dict(self.states_by_timestamp)),
+        )
+        object.__setattr__(
+            self,
+            "indicators_15m_by_timestamp",
+            MappingProxyType(dict(self.indicators_15m_by_timestamp)),
         )
 
     def state_at(self, timestamp: datetime) -> HigherTimeframeState | None:
@@ -169,7 +178,7 @@ def prepare_v6_context(candles: Sequence[Candle]) -> V6PreparedContext:
 
     source = tuple(candles)
     if not source:
-        return V6PreparedContext((), {})
+        return V6PreparedContext((), {}, {})
     completed = aggregate_completed_4h_candles(
         source,
         as_of=source[-1].timestamp,
@@ -204,7 +213,17 @@ def prepare_v6_context(candles: Sequence[Candle]) -> V6PreparedContext:
         if candle.timestamp in ready_states:
             latest = ready_states[candle.timestamp]
         by_timestamp[candle.timestamp] = latest
-    return V6PreparedContext(completed, by_timestamp)
+    indicators_15m = IndicatorEngine().calculate_research_series(
+        source,
+        fast_ema_period=V6MTFContinuationStrategy.PULLBACK_EMA_PERIOD,
+        slow_ema_period=V6MTFContinuationStrategy.HIGHER_TIMEFRAME_SLOW_EMA_PERIOD,
+        atr_period=V6MTFContinuationStrategy.ATR_PERIOD_4H,
+    )
+    return V6PreparedContext(
+        completed,
+        by_timestamp,
+        {snapshot.timestamp: snapshot for snapshot in indicators_15m},
+    )
 
 
 class V6MTFContinuationStrategy(BaseStrategy):
@@ -254,11 +273,15 @@ class V6MTFContinuationStrategy(BaseStrategy):
 
     @property
     def required_history_bars(self) -> int:
-        return self.REQUIRED_HISTORY_BARS
+        return (
+            self.REQUIRED_HISTORY_BARS
+            if self._prepared_context is None
+            else self.PULLBACK_EMA_PERIOD
+        )
 
     @property
     def requires_full_history(self) -> bool:
-        return True
+        return self._prepared_context is None
 
     def evaluate(self, context: StrategyContext) -> StrategyDecision:
         if context.has_position:

@@ -20,6 +20,7 @@ from src.cli.run_v6_h0_replay import (
     classify_stop_source,
     evaluation_days_total,
     main,
+    _window_result,
     validate_eligible_windows,
     validate_replay_configs,
     write_reports,
@@ -242,6 +243,20 @@ def test_six_of_eleven_fails_frozen_gate() -> None:
     result = payload(positive=6)
     assert result["gate"]["positive_net_windows"] == 6
     assert result["progression_eligible"] is False
+
+
+def test_positive_net_uses_exact_window_net_expectancy() -> None:
+    summary = summarize_combined_records(((record("T1", "0.0001"),),))
+    row = _window_result(
+        window=SimpleNamespace(window_id="W001", duration_days=Decimal("1")),
+        evaluation=SimpleNamespace(
+            backtest=SimpleNamespace(equity_curve=())
+        ),
+        summary=summary,
+    )
+    assert row.net_expectancy_r == Decimal("0.0001")
+    assert row.positive_net is True
+    assert row.positive_net == (row.net_expectancy_r > 0)
 
 
 def test_report_serialization_and_existing_summary_blocks_rerun(tmp_path) -> None:

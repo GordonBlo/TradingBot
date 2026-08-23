@@ -10,6 +10,8 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from statistics import median
+from types import MappingProxyType
+from typing import Mapping
 
 from src.backtest.models import BacktestConfig, Trade
 from src.cli.run_multiregime import _require_locked_holdout
@@ -34,9 +36,12 @@ from src.diagnostics.r_normalized import (
 from src.diagnostics.risk_capital_audit import build_risk_capital_audit
 from src.historical.dataset import HistoricalDataset
 from src.hypotheses.manifest import HoldoutStatus, ResearchManifestStore
-from src.market.intervals import next_open_time
 from src.research.evaluation import SignalRecord, evaluate_strategy_period
-from src.research.multiregime.models import PartitionStatus, ResearchWindow
+from src.research.multiregime.models import (
+    PartitionKind,
+    PartitionStatus,
+    ResearchWindow,
+)
 from src.research.multiregime.windows import construct_windows
 from src.research.v6_mtf_continuation_stability import (
     REQUIRED_ELIGIBLE_WINDOWS,
@@ -47,6 +52,7 @@ from src.strategy.models import StrategyAction, TrendMomentumConfig
 from src.strategy.v6_mtf_continuation import (
     V6PreparedContext,
     V6MTFContinuationStrategy,
+    SOURCE_BAR_DURATION,
     prepare_v6_context,
 )
 from src.utils.logger import configure_logging, get_logger
@@ -84,6 +90,18 @@ class StopObservation:
     initial_stop_distance: Decimal
     initial_stop_distance_bps: Decimal
     stop_source: str
+
+
+@dataclass(frozen=True, slots=True)
+class WindowPreparationProfile:
+    window_id: str
+    replay_dataset_candles: int
+    warmup_candles: int
+    evaluated_candles: int
+    context_preparation_calls_before: int
+    candles_prepared_before: int
+    base_preparation_count_before: int
+    stress_preparation_count_before: int
 
 
 def _mean(values: tuple[Decimal, ...]) -> Decimal:
@@ -244,6 +262,101 @@ def validate_eligible_windows(windows: tuple[ResearchWindow, ...]) -> None:
             raise ValueError("V6-H0 window market changed.")
 
 
+def _owner_region(window: ResearchWindow, regions: tuple):
+    owner = next(
+        (
+            region
+            for region in regions
+            if region.metadata.kind is window.partition_kind
+            and region.metadata.start <= window.start
+            and window.end <= region.metadata.end
+        ),
+        None,
+    )
+    if owner is None:
+        raise ValueError("V6-H0 window has no consumed-data owner region.")
+    if owner.metadata.kind is PartitionKind.LOCKED_BLIND_HOLDOUT:
+        raise ValueError("V6-H0 refuses blind-holdout context preparation.")
+    return owner
+
+
+def _region_key(region) -> tuple:
+    return (
+        region.metadata.kind,
+        region.metadata.start,
+        region.metadata.end,
+    )
+
+
+def prepare_v6_region_contexts(
+    *, windows: tuple[ResearchWindow, ...], regions: tuple
+) -> Mapping[tuple, V6PreparedContext]:
+    """Prepare one immutable V6 timeline per safe owner region."""
+
+    owners = {
+        _region_key(owner): owner
+        for window in windows
+        for owner in (_owner_region(window, regions),)
+    }
+    return MappingProxyType(
+        {
+            key: prepare_v6_context(owner.dataset.candles)
+            for key, owner in owners.items()
+        }
+    )
+
+
+def prepared_context_for_window(
+    *,
+    window: ResearchWindow,
+    regions: tuple,
+    region_contexts: Mapping[tuple, V6PreparedContext],
+) -> V6PreparedContext:
+    owner = _owner_region(window, regions)
+    try:
+        return region_contexts[_region_key(owner)]
+    except KeyError as exc:
+        raise ValueError("V6-H0 owner region was not prepared.") from exc
+
+
+def window_preparation_profiles(
+    windows: tuple[ResearchWindow, ...],
+) -> tuple[WindowPreparationProfile, ...]:
+    """Describe the superseded per-window preparation lifecycle."""
+
+    return tuple(
+        WindowPreparationProfile(
+            window_id=window.window_id,
+            replay_dataset_candles=len(window.replay_dataset.candles),
+            warmup_candles=window.evaluation_start_index,
+            evaluated_candles=(
+                len(window.replay_dataset.candles)
+                - window.evaluation_start_index
+            ),
+            context_preparation_calls_before=1,
+            candles_prepared_before=len(window.replay_dataset.candles),
+            base_preparation_count_before=1,
+            stress_preparation_count_before=0,
+        )
+        for window in windows
+    )
+
+
+def preparation_work_totals(
+    *, windows: tuple[ResearchWindow, ...], regions: tuple
+) -> tuple[int, int]:
+    """Return old per-window versus new per-region prepared candle counts."""
+
+    before = sum(len(window.replay_dataset.candles) for window in windows)
+    owners = {
+        _region_key(owner): owner
+        for window in windows
+        for owner in (_owner_region(window, regions),)
+    }
+    after = sum(len(owner.dataset.candles) for owner in owners.values())
+    return before, after
+
+
 def expand_complete_region_history(
     windows: tuple[ResearchWindow, ...],
     regions: tuple,
@@ -252,18 +365,7 @@ def expand_complete_region_history(
 
     expanded: list[ResearchWindow] = []
     for window in windows:
-        owner = next(
-            (
-                region
-                for region in regions
-                if region.metadata.kind is window.partition_kind
-                and region.metadata.start <= window.start
-                and window.end <= region.metadata.end
-            ),
-            None,
-        )
-        if owner is None:
-            raise ValueError("V6-H0 window has no consumed-data owner region.")
+        owner = _owner_region(window, regions)
         prior = tuple(
             candle
             for candle in owner.dataset.candles
@@ -304,22 +406,12 @@ def evaluation_days_total(windows: tuple[ResearchWindow, ...]) -> Decimal:
 def _stop_observations(
     *,
     trades: tuple[Trade, ...],
-    dataset: HistoricalDataset,
     prepared_context: V6PreparedContext,
 ) -> tuple[StopObservation, ...]:
-    signal_candles = {
-        next_open_time(candle.timestamp, dataset.interval): candle
-        for candle in dataset.candles
-    }
     output: list[StopObservation] = []
     for trade in trades:
-        try:
-            signal_candle = signal_candles[trade.entry_signal_time]
-        except KeyError as exc:
-            raise ValueError(
-                f"V6-H0 signal candle missing for {trade.trade_id}."
-            ) from exc
-        state = prepared_context.state_at(signal_candle.timestamp)
+        signal_candle_timestamp = trade.entry_signal_time - SOURCE_BAR_DURATION
+        state = prepared_context.state_at(signal_candle_timestamp)
         if state is None:
             raise ValueError(f"V6-H0 4h ATR missing for {trade.trade_id}.")
         output.append(
@@ -376,10 +468,10 @@ def _evaluate_window(
         strategy_config=strategy_config,
         backtest_config=backtest_config,
         evaluation_start_index=window.evaluation_start_index,
+        prepared_indicators=prepared_context.indicators_15m_by_timestamp,
     )
     observations = _stop_observations(
         trades=evaluation.backtest.trades,
-        dataset=window.replay_dataset,
         prepared_context=prepared_context,
     )
     risk_records = build_risk_capital_audit(
@@ -649,6 +741,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         eligible_windows = expand_complete_region_history(eligible, regions)
         validate_eligible_windows(eligible_windows)
+        region_contexts = prepare_v6_region_contexts(
+            windows=eligible_windows,
+            regions=regions,
+        )
 
         logger.info("V6-H0 PREREGISTERED REPLAY")
         logger.info("Windows: 11 | CONSUMED_RESEARCH_DATA")
@@ -665,7 +761,11 @@ def main(argv: list[str] | None = None) -> int:
         final_buy_signals = 0
 
         for window in eligible_windows:
-            prepared_context = prepare_v6_context(window.replay_dataset.candles)
+            prepared_context = prepared_context_for_window(
+                window=window,
+                regions=regions,
+                region_contexts=region_contexts,
+            )
             evaluation, records, summary, observations = _evaluate_window(
                 window=window,
                 strategy_config=strategy_config,

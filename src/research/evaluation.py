@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from datetime import datetime
 from decimal import Decimal
+from typing import Mapping
 
 from src.analysis.indicators import IndicatorEngine
 from src.backtest.engine import (
@@ -23,6 +24,7 @@ from src.backtest.models import (
 )
 from src.historical.dataset import HistoricalDataset
 from src.market.intervals import next_open_time
+from src.models.research_indicator_snapshot import ResearchIndicatorSnapshot
 from src.strategy.base import BaseStrategy
 from src.strategy.context import StrategyContext
 from src.strategy.models import DecisionReason, StrategyAction, TrendMomentumConfig
@@ -54,6 +56,9 @@ class StrategyDecisionAdapter:
         strategy_config: TrendMomentumConfig,
         backtest_config: BacktestConfig,
         minimum_action_index: int = 0,
+        prepared_indicators: Mapping[
+            datetime, ResearchIndicatorSnapshot
+        ] | None = None,
     ) -> None:
         if not 0 <= minimum_action_index < len(dataset.candles):
             raise ValueError("Minimum strategy action index is outside the dataset.")
@@ -72,13 +77,18 @@ class StrategyDecisionAdapter:
             strategy_config.volume_sma_period,
             strategy.required_history_bars,
         ) + 1
-        self._indicators = IndicatorEngine().calculate_research_series(
-            dataset.candles,
-            fast_ema_period=strategy_config.fast_ema_period,
-            slow_ema_period=strategy_config.slow_ema_period,
-            rsi_period=strategy_config.rsi_period,
-            atr_period=strategy_config.atr_period,
-            volume_sma_period=strategy_config.volume_sma_period,
+        self._prepared_indicators = prepared_indicators
+        self._indicators = (
+            ()
+            if prepared_indicators is not None
+            else IndicatorEngine().calculate_research_series(
+                dataset.candles,
+                fast_ema_period=strategy_config.fast_ema_period,
+                slow_ema_period=strategy_config.slow_ema_period,
+                rsi_period=strategy_config.rsi_period,
+                atr_period=strategy_config.atr_period,
+                volume_sma_period=strategy_config.volume_sma_period,
+            )
         )
         self._last_completed_count = 0
         self._last_exit_index: int | None = None
@@ -93,8 +103,27 @@ class StrategyDecisionAdapter:
             if self._last_exit_index is not None
             else None
         )
-        current = self._indicators[context.index]
-        previous = self._indicators[context.index - 1] if context.index > 0 else None
+        if self._prepared_indicators is None:
+            current = self._indicators[context.index]
+            previous = (
+                self._indicators[context.index - 1]
+                if context.index > 0
+                else None
+            )
+        else:
+            try:
+                current = self._prepared_indicators[context.candle.timestamp]
+                previous = (
+                    self._prepared_indicators[
+                        self._dataset.candles[context.index - 1].timestamp
+                    ]
+                    if context.index > 0
+                    else None
+                )
+            except KeyError as exc:
+                raise ValueError(
+                    "Prepared indicators do not cover the evaluation dataset."
+                ) from exc
         history_start = (
             0
             if self._requires_full_history
@@ -177,6 +206,9 @@ def evaluate_strategy_period(
     evaluation_start_index: int = 0,
     stop_updates : StopUpdateProvider | None = None,
     position_exits: PositionExitProvider | None = None,
+    prepared_indicators: Mapping[
+        datetime, ResearchIndicatorSnapshot
+    ] | None = None,
 ) -> StrategyPeriodEvaluation:
     adapter = StrategyDecisionAdapter(
         dataset=dataset,
@@ -184,6 +216,7 @@ def evaluate_strategy_period(
         strategy_config=strategy_config,
         backtest_config=backtest_config,
         minimum_action_index=evaluation_start_index,
+        prepared_indicators=prepared_indicators,
     )
     result = BacktestEngine(backtest_config).run(
         dataset,
