@@ -117,7 +117,20 @@ class OrderFlowBucketStore:
         return path
 
     def load(self, *, symbol: str = "BTCUSDC") -> tuple[OrderFlowBucket, ...]:
-        path = self.path(symbol)
+        return self._load_path(self.path(symbol))
+
+    def load_partition(
+        self,
+        *,
+        year: int,
+        month: int,
+        symbol: str = "BTCUSDC",
+    ) -> tuple[OrderFlowBucket, ...]:
+        """Load one deterministic monthly partition through the shared parser."""
+
+        return self._load_path(self.partition_path(year, month, symbol))
+
+    def _load_path(self, path: Path) -> tuple[OrderFlowBucket, ...]:
         try:
             with path.open("r", encoding="utf-8", newline="") as stream:
                 reader = csv.DictReader(stream)
