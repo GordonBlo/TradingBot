@@ -1,0 +1,240 @@
+{
+  "anti_overfitting": {
+    "alternate_threshold_testing": false,
+    "forbidden_automatic_followups_if_v7_h0_fails": [
+      "QUOTE_IMBALANCE_GT_0.05",
+      "QUOTE_IMBALANCE_GT_0.10",
+      "QUOTE_IMBALANCE_GT_0.20",
+      "BUY_RATIO_GT_55_PERCENT",
+      "BUY_RATIO_GT_60_PERCENT",
+      "BASE_IMBALANCE_INSTEAD_OF_QUOTE_IMBALANCE",
+      "PREVIOUS_CANDLE_IMBALANCE",
+      "TWO_CANDLE_CUMULATIVE_DELTA",
+      "FOUR_CANDLE_CUMULATIVE_DELTA"
+    ],
+    "parameter_search": false,
+    "separate_justification_and_preregistration_required": true
+  },
+  "baseline_id": "V7_H0",
+  "causality": {
+    "bucket_must_be_fully_completed_at_decision_time": true,
+    "future_orderflow_forward_fill_allowed": false,
+    "join_rule": "BUCKET_OPEN_TIME_EXACTLY_EQUALS_V6_SIGNAL_CANDLE_OPEN_TIME",
+    "later_aggregate_trade_allowed": false,
+    "missing_bucket_entry_rule": "NO_ENTRY",
+    "missing_bucket_integrity_rule": "REPORT_INTEGRITY_FAILURE",
+    "nearest_neighbor_lookup_allowed": false,
+    "next_bucket_allowed": false,
+    "partial_future_bucket_allowed": false,
+    "rolling_future_bucket_feature_allowed": false,
+    "signal_candle_bucket_only": true,
+    "signal_candle_timestamp_semantics": "15M_BUCKET_OPEN_TIME_UTC",
+    "timestamp_approximation_allowed": false
+  },
+  "costs": {
+    "base": {
+      "fee_bps_per_side": "10",
+      "slippage_bps_per_side": "2"
+    },
+    "stress_2x": {
+      "fee_bps_per_side": "20",
+      "slippage_bps_per_side": "4"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "downloaded": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": 11,
+    "only_dataset_definition_sha256": "dbca5d298f870068cfdc99ad0d550eda3d0af52b452c484c2e6d1e80e3c79567",
+    "only_dataset_id": "8fdfcee8d68b6f48",
+    "research_data_status": "CONSUMED_RESEARCH_DATA"
+  },
+  "definition_sha256": "74b2458cb2812de255b30663398d32fdf7291404c68d55cb28ddb37eebb16e7e",
+  "evaluation": {
+    "base_metrics": [
+      "TOTAL_TRADES",
+      "TRADE_RETENTION_RATIO_VS_V6",
+      "FRICTIONLESS_EXPECTANCY_R_PER_TRADE",
+      "NET_EXPECTANCY_R_PER_TRADE",
+      "PROFIT_FACTOR_R",
+      "WIN_RATE",
+      "AVERAGE_WINNER_R",
+      "AVERAGE_LOSER_R",
+      "PAYOFF_RATIO",
+      "AVERAGE_FRICTION_R_PER_TRADE",
+      "MAXIMUM_DRAWDOWN_PERCENT",
+      "TRADES_PER_DAY",
+      "NET_R_PER_DAY",
+      "POSITIVE_NET_WINDOWS_OUT_OF_11"
+    ],
+    "orderflow_metrics": [
+      "MEAN_RETAINED_SIGNAL_QUOTE_VOLUME_IMBALANCE",
+      "MEDIAN_RETAINED_SIGNAL_QUOTE_VOLUME_IMBALANCE",
+      "MEAN_RETAINED_SIGNAL_TAKER_BUY_QUOTE_RATIO",
+      "MEDIAN_RETAINED_SIGNAL_TAKER_BUY_QUOTE_RATIO"
+    ],
+    "reference_comparison_metrics": [
+      "V7_MINUS_V6_FRICTIONLESS_EXPECTANCY_R",
+      "V7_MINUS_V6_NET_EXPECTANCY_R",
+      "V7_MINUS_V6_PROFIT_FACTOR_R",
+      "WINDOWS_V7_FRICTIONLESS_EXPECTANCY_GT_V6",
+      "WINDOWS_V7_NET_EXPECTANCY_GT_V6"
+    ],
+    "stress_is_mandatory_reporting": true,
+    "stress_is_progression_gate": false,
+    "stress_is_support_gate": false,
+    "stress_metrics": [
+      "STRESS_2X_NET_EXPECTANCY_R_PER_TRADE",
+      "STRESS_2X_PROFIT_FACTOR_R",
+      "STRESS_2X_NET_R_PER_DAY"
+    ]
+  },
+  "execution_risk_and_exit": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "break_even_stop": false,
+    "cooldown_bars": 4,
+    "early_failure_exit": false,
+    "execution": "NEXT_BAR_OPEN",
+    "initial_stop_distance": "MAX_OF_FROZEN_ATR14_4H_AND_ACTUAL_ENTRY_FILL_TIMES_0.0096",
+    "maximum_hold_15m_bars": 96,
+    "minimum_stop_distance_bps": "96",
+    "reward_risk_ratio": "2",
+    "stress_does_not_change_stop_floor": true,
+    "take_profit": "ACTUAL_ENTRY_FILL_PLUS_2R",
+    "trailing_stop": false
+  },
+  "feature_scope": {
+    "allowed": [
+      "CURRENT_SIGNAL_CANDLE_QUOTE_VOLUME_AGGRESSOR_DIRECTION"
+    ],
+    "forbidden": [
+      "BASE_VOLUME_IMBALANCE_FILTER",
+      "PRIOR_CANDLE_IMBALANCE",
+      "MULTI_CANDLE_CUMULATIVE_DELTA",
+      "ROLLING_IMBALANCE",
+      "TRADE_SIZE",
+      "LARGE_TRADE_CONCENTRATION",
+      "TRADE_COUNT",
+      "BUY_SELL_AGGTRADE_COUNT",
+      "VOLUME_PERCENTILE",
+      "DIVERGENCE",
+      "ABSORPTION",
+      "ORDER_BOOK_DATA"
+    ]
+  },
+  "frozen_v6_reference": {
+    "average_friction_r_per_trade": "0.1839118157030117546459381019",
+    "eligible_windows": 11,
+    "entry_regime_risk_execution_and_exits_must_remain_unchanged": true,
+    "frictionless_expectancy_r_per_trade": "+0.04722009245553381286395292467",
+    "net_expectancy_r_per_trade": "-0.1366917232474779417819851766",
+    "positive_net_windows": 1,
+    "profit_factor_r": "0.7695960517596068371318908235",
+    "progression": false,
+    "run_id": "e1eef7bdd0c37ad4",
+    "strategy": "V6_H0_COST_AWARE_MTF_PULLBACK_CONTINUATION",
+    "trades": 443
+  },
+  "frozen_v6_signal": {
+    "completed_4h_regime_all_required": [
+      "EMA20_4H_STRICTLY_GREATER_THAN_EMA50_4H",
+      "LATEST_COMPLETED_4H_CLOSE_STRICTLY_GREATER_THAN_EMA20_4H"
+    ],
+    "setup_15m_all_required": [
+      "PREVIOUS_CLOSE_LESS_THAN_OR_EQUAL_TO_PREVIOUS_EMA20_15M",
+      "CURRENT_CLOSE_STRICTLY_GREATER_THAN_CURRENT_EMA20_15M",
+      "CURRENT_CLOSE_STRICTLY_GREATER_THAN_PREVIOUS_HIGH"
+    ],
+    "v7_requires_v6_buy": true
+  },
+  "market": {
+    "direction": "LONG_ONLY",
+    "execution_interval": "15m",
+    "market_type": "BINANCE_PUBLIC_SPOT",
+    "regime_interval": "4h",
+    "symbol": "BTCUSDC"
+  },
+  "orderflow_confirmation": {
+    "all_conditions_required": true,
+    "comparison_is_strict": true,
+    "conditions": [
+      "FROZEN_V6_H0_EMITS_BUY",
+      "TOTAL_QUOTE_VOLUME_STRICTLY_GREATER_THAN_ZERO",
+      "TAKER_BUY_QUOTE_VOLUME_STRICTLY_GREATER_THAN_TAKER_SELL_QUOTE_VOLUME",
+      "QUOTE_VOLUME_IMBALANCE_STRICTLY_GREATER_THAN_ZERO"
+    ],
+    "equality_qualifies": false,
+    "feature": "CURRENT_SIGNAL_CANDLE_QUOTE_VOLUME_AGGRESSOR_DIRECTION",
+    "formula": "(TAKER_BUY_QUOTE_VOLUME_MINUS_TAKER_SELL_QUOTE_VOLUME)/TOTAL_QUOTE_VOLUME",
+    "new_feature_count": 1,
+    "source_bucket": "EXACT_CORRESPONDING_FULLY_COMPLETED_15M_BUCKET",
+    "threshold": "0",
+    "threshold_basis": "NATURAL_ECONOMIC_BALANCE_POINT_NOT_OPTIMIZED",
+    "zero_total_quote_volume_rule": "NO_ENTRY"
+  },
+  "orderflow_dataset": {
+    "buyer_is_maker_false": "TAKER_BUY",
+    "buyer_is_maker_true": "TAKER_SELL",
+    "dataset_id": "8fdfcee8d68b6f48",
+    "definition_sha256": "dbca5d298f870068cfdc99ad0d550eda3d0af52b452c484c2e6d1e80e3c79567",
+    "duplicate_buckets": 0,
+    "extra_buckets": 0,
+    "interval": "15m",
+    "missing_buckets": 0,
+    "reconciled_buckets": 95040,
+    "required_research_buckets": 95040,
+    "source": "BINANCE_PUBLIC_SPOT_AGGTRADES"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "combined_net_expectancy_r_gt": "0",
+    "minimum_positive_net_windows": 7,
+    "profit_factor_r_gt": "1",
+    "required_eligible_windows": 11,
+    "stress_is_gate": false,
+    "support_gate_must_pass": true
+  },
+  "reference_relationship": {
+    "diagnostics": [
+      "V6_REFERENCE_ENTRIES",
+      "V7_RETAINED_ENTRIES",
+      "FILTERED_OUT_V6_ENTRIES",
+      "TRADE_RETENTION_RATIO_VS_V6",
+      "NON_V6_ENTRY_COUNT"
+    ],
+    "may_create_non_v6_entry": false,
+    "may_remove_v6_entries": true,
+    "relationship": "STRICT_FILTER_OF_V6_H0_ENTRIES",
+    "required_non_v6_entry_count": 0
+  },
+  "research_question": "DOES_CONTEMPORANEOUS_AGGRESSIVE_BUYER_DOMINANCE_ON_THE_CLOSED_15M_V6_SIGNAL_CANDLE_IMPROVE_FROZEN_V6_CONTINUATION_ENTRIES",
+  "research_rule": "V7_H0_TESTS_EXACTLY_ONE_UNOPTIMIZED_ORDERFLOW_FEATURE_AS_A_STRICT_FILTER_OF_FROZEN_V6_H0",
+  "run_id": "74b2458cb2812de2",
+  "strategy_family": "ORDER_FLOW_CONFIRMED_V6_CONTINUATION",
+  "support_gate": {
+    "all_conditions_required": true,
+    "combined_frictionless_expectancy_r_gt_frozen_v6": "+0.04722009245553381286395292467",
+    "combined_net_expectancy_r_gt_frozen_v6": "-0.1366917232474779417819851766",
+    "meaning": "ORDERFLOW_INFORMATION_HYPOTHESIS_SUPPORTED",
+    "minimum_windows_net_expectancy_better_than_v6": 7,
+    "profit_factor_r_gt_frozen_v6": "0.7695960517596068371318908235",
+    "required_eligible_consumed_windows": 11,
+    "required_non_v6_entry_count": 0
+  },
+  "version": "7.0",
+  "zero_trade_window_semantics": {
+    "counts_as_net_better_than_v6": false,
+    "counts_as_positive_net": false,
+    "fabricate_zero_expectancy_as_improvement": false,
+    "must_report_explicitly": true,
+    "status": "ZERO_TRADES"
+  }
+}
