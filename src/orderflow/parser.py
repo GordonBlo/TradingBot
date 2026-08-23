@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import csv
+import io
+import zipfile
 from collections.abc import Iterable
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -141,3 +143,31 @@ def parse_aggtrade_file(path: str | Path) -> tuple[AggregateTrade, ...]:
         raise
     except OSError as exc:
         raise AggregateTradeParseError(f"{source_path}: could not read archive CSV.") from exc
+
+
+def parse_aggtrade_archive(path: str | Path) -> tuple[AggregateTrade, ...]:
+    """Parse the single CSV member of a checksum-verified Binance ZIP archive."""
+
+    archive_path = Path(path)
+    try:
+        with zipfile.ZipFile(archive_path) as archive:
+            members = [
+                name
+                for name in archive.namelist()
+                if not name.endswith("/") and name.lower().endswith(".csv")
+            ]
+            if len(members) != 1:
+                raise AggregateTradeParseError(
+                    f"{archive_path}: archive must contain exactly one CSV."
+                )
+            with archive.open(members[0]) as raw:
+                with io.TextIOWrapper(raw, encoding="utf-8-sig", newline="") as stream:
+                    return parse_aggtrade_csv(
+                        stream, source=f"{archive_path}!{members[0]}"
+                    )
+    except AggregateTradeParseError:
+        raise
+    except (OSError, UnicodeError, zipfile.BadZipFile) as exc:
+        raise AggregateTradeParseError(
+            f"{archive_path}: could not read aggTrades ZIP."
+        ) from exc

@@ -63,6 +63,40 @@ def build_archive_location(
     )
 
 
+def build_kline_archive_location(
+    period: date,
+    *,
+    interval: str = "15m",
+    symbol: str = "BTCUSDC",
+    root: str | Path = "data/orderflow/raw",
+) -> ArchiveLocation:
+    """Build the official one-day kline reference used only for reconciliation."""
+
+    symbol = symbol.strip().upper()
+    if symbol != "BTCUSDC" or interval != "15m":
+        raise ValueError("V7 validation supports BTCUSDC 15m only.")
+    filename = f"{symbol}-{interval}-{period.isoformat()}.zip"
+    url = (
+        "https://data.binance.vision/data/spot/daily/klines/"
+        f"{symbol}/{interval}/{filename}"
+    )
+    destination = (
+        Path(root)
+        / symbol
+        / "validation_klines"
+        / "daily"
+        / f"{period.year:04d}"
+        / f"{period.month:02d}"
+        / filename
+    )
+    return ArchiveLocation(
+        url=url,
+        checksum_url=f"{url}.CHECKSUM",
+        destination=destination,
+        checksum_destination=destination.with_suffix(".zip.CHECKSUM"),
+    )
+
+
 Fetcher = Callable[[str, float], bytes]
 
 

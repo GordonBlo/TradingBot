@@ -10,6 +10,7 @@ from src.orderflow.archive import (
     ArchiveDownloadResult,
     ArchiveLocation,
     build_archive_location,
+    build_kline_archive_location,
 )
 from src.orderflow.integrity import (
     AggregateTradeIntegrityError,
@@ -19,6 +20,7 @@ from src.orderflow.models import AggregateTrade, AggressorSide
 from src.orderflow.parser import (
     AggregateTradeParseError,
     parse_aggtrade_csv,
+    parse_aggtrade_archive,
     parse_aggtrade_file,
 )
 from src.orderflow.storage import OrderFlowBucketStore, OrderFlowStorageError
@@ -36,8 +38,10 @@ __all__ = (
     "OrderFlowStorageError",
     "aggregate_15m",
     "build_archive_location",
+    "build_kline_archive_location",
     "completed_bucket_at",
     "parse_aggtrade_csv",
+    "parse_aggtrade_archive",
     "parse_aggtrade_file",
     "verify_sha256",
 )
