@@ -231,11 +231,14 @@ def validate_v7_h0_implementation(manifest: dict) -> None:
     )
     required_evaluate = (
         "v6_decision = self._v6_strategy.evaluate(context)",
-        "if v6_decision.action is not StrategyAction.ENTER_LONG:",
+        "signal_time = self._utc(context.timestamp)",
+        "if signal_time not in self._frozen_v6_entry_signal_times:",
+        "self._suppressed_nonreference_candidate_timestamps.add(signal_time)",
         "signal_open_time = self._utc(context.current_candle.timestamp)",
         "self._buckets_by_open_time.get(signal_open_time)",
         "bucket.bucket_close_time > self._utc(context.timestamp)",
         "self._missing_bucket_timestamps.add(signal_open_time)",
+        "self._scheduled_candidate_conflict_timestamps.add(signal_time)",
         "return v6_decision",
     )
     if any(fragment not in flow_source for fragment in required_flow):
@@ -260,6 +263,7 @@ def validate_v7_h0_implementation(manifest: dict) -> None:
         buckets=(),
         dataset_id=EXPECTED_DATASET_ID,
         dataset_definition_sha256=EXPECTED_DATASET_SHA256,
+        frozen_v6_entry_signal_times=(),
     )
     if not isinstance(strategy._v6_strategy, V6MTFContinuationStrategy):
         raise ValueError("V7-H0 is not structurally composed from frozen V6-H0.")

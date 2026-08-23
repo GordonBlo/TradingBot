@@ -260,12 +260,14 @@ def _evaluate_v7_window(
     backtest_config: BacktestConfig,
     prepared_context,
     buckets: tuple[OrderFlowBucket, ...],
+    frozen_v6_entry_signal_times: tuple[datetime, ...],
 ):
     strategy = V7OrderFlowConfirmationStrategy(
         strategy_config,
         buckets=buckets,
         dataset_id=EXPECTED_DATASET_ID,
         dataset_definition_sha256=EXPECTED_DATASET_SHA256,
+        frozen_v6_entry_signal_times=frozen_v6_entry_signal_times,
         v6_strategy=V6MTFContinuationStrategy(
             strategy_config,
             prepared_context=prepared_context,
@@ -282,6 +284,10 @@ def _evaluate_v7_window(
     if strategy.missing_bucket_timestamps:
         raise ValueError(
             f"V7-H0 exact order-flow buckets missing in {window.window_id}."
+        )
+    if strategy.scheduled_candidate_conflict_timestamps:
+        raise ValueError(
+            f"V7-H0 frozen candidate conflicts with V7 state in {window.window_id}."
         )
     observations = _stop_observations(
         trades=evaluation.backtest.trades,
@@ -825,6 +831,9 @@ def main(argv: list[str] | None = None) -> int:
                 backtest_config=base_config,
                 prepared_context=prepared,
                 buckets=buckets,
+                frozen_v6_entry_signal_times=entry_signal_timestamps(
+                    v6_evaluation.signals
+                ),
             )
             row = build_window_result(
                 window=window,
@@ -856,6 +865,9 @@ def main(argv: list[str] | None = None) -> int:
                 backtest_config=stress_config,
                 prepared_context=prepared,
                 buckets=buckets,
+                frozen_v6_entry_signal_times=entry_signal_timestamps(
+                    v6_evaluation.signals
+                ),
             )
             stress_record_groups.append(stress_records)
 

@@ -119,12 +119,19 @@ class ControlledV6(V6MTFContinuationStrategy):
         self.decision = decision
 
     def evaluate(self, context: StrategyContext) -> StrategyDecision:
+        if context.has_position:
+            return StrategyDecision(
+                StrategyAction.HOLD,
+                DecisionReason.NO_ENTRY,
+                "Controlled V6 position remains open",
+            )
         return self.decision
 
 
 def v7(
     decision: StrategyDecision,
     buckets: tuple[OrderFlowBucket, ...] = (bucket(),),
+    frozen_schedule: tuple[datetime, ...] = (BASE + timedelta(minutes=15),),
     **identity: str,
 ) -> V7OrderFlowConfirmationStrategy:
     return V7OrderFlowConfirmationStrategy(
@@ -135,6 +142,7 @@ def v7(
             "dataset_definition_sha256",
             V7OrderFlowConfirmationStrategy.ORDERFLOW_DATASET_DEFINITION_SHA256,
         ),
+        frozen_v6_entry_signal_times=frozen_schedule,
         v6_strategy=ControlledV6(decision),
     )
 
@@ -160,8 +168,12 @@ def test_frozen_quote_flow_confirmation_is_strict(
 
 def test_v6_hold_stays_hold_despite_positive_flow() -> None:
     decision = StrategyDecision(StrategyAction.HOLD, DecisionReason.NO_ENTRY, "V6 hold")
+    strategy = v7(decision)
 
-    assert v7(decision).evaluate(strategy_context()) is decision
+    assert strategy.evaluate(strategy_context()).action is StrategyAction.HOLD
+    assert strategy.scheduled_candidate_conflict_timestamps == frozenset(
+        {BASE + timedelta(minutes=15)}
+    )
 
 
 @pytest.mark.parametrize(
@@ -262,8 +274,17 @@ def test_retained_v6_buy_uses_existing_next_open_stop_first_execution() -> None:
         strategy_config=CONFIG,
         backtest_config=BacktestConfig(fee_bps=Decimal("0"), slippage_bps=Decimal("0")),
     ).backtest
+    reference = evaluate_strategy_period(
+        dataset,
+        strategy=ControlledV6(enter_decision(Decimal("0.1"))),
+        strategy_config=CONFIG,
+        backtest_config=BacktestConfig(
+            fee_bps=Decimal("0"), slippage_bps=Decimal("0")
+        ),
+    ).backtest
 
     trade = result.trades[0]
+    assert trade == reference.trades[0]
     assert trade.entry_price == actual_fill
     assert trade.exit_price == stop
     assert trade.exit_reason is ExitReason.STOP_LOSS
@@ -274,3 +295,34 @@ def test_v7_returns_the_unmodified_v6_risk_decision_when_confirmed() -> None:
     decision = enter_decision()
 
     assert v7(decision).evaluate(strategy_context()) is decision
+
+
+def test_filtered_reference_entry_cannot_create_later_replacement_entry() -> None:
+    first_signal = BASE + timedelta(minutes=15)
+    later_signal = BASE + timedelta(minutes=30)
+    strategy = v7(
+        enter_decision(),
+        (
+            bucket(BASE, buy=Decimal("40"), sell=Decimal("60")),
+            bucket(
+                BASE + timedelta(minutes=15),
+                buy=Decimal("60"),
+                sell=Decimal("40"),
+            ),
+        ),
+        frozen_schedule=(first_signal,),
+    )
+
+    filtered = strategy.evaluate(strategy_context())
+    replacement = strategy.evaluate(
+        strategy_context(BASE + timedelta(minutes=15))
+    )
+
+    assert filtered.action is StrategyAction.HOLD
+    assert replacement.action is StrategyAction.HOLD
+    assert replacement.metadata["orderflow_integrity_status"] == (
+        "OUTSIDE_FROZEN_V6_SCHEDULE"
+    )
+    assert strategy.suppressed_nonreference_candidate_timestamps == frozenset(
+        {later_signal}
+    )

@@ -41,6 +41,7 @@ class V7OrderFlowConfirmationStrategy(BaseStrategy):
         buckets: Sequence[OrderFlowBucket],
         dataset_id: str,
         dataset_definition_sha256: str,
+        frozen_v6_entry_signal_times: Iterable[datetime],
         v6_strategy: V6MTFContinuationStrategy | None = None,
     ) -> None:
         self._validate_dataset_identity(dataset_id, dataset_definition_sha256)
@@ -58,7 +59,12 @@ class V7OrderFlowConfirmationStrategy(BaseStrategy):
         self._buckets_by_open_time: Mapping[datetime, OrderFlowBucket] = (
             MappingProxyType(by_open_time)
         )
+        self._frozen_v6_entry_signal_times = frozenset(
+            self._utc(timestamp) for timestamp in frozen_v6_entry_signal_times
+        )
         self._missing_bucket_timestamps: set[datetime] = set()
+        self._suppressed_nonreference_candidate_timestamps: set[datetime] = set()
+        self._scheduled_candidate_conflict_timestamps: set[datetime] = set()
 
     @staticmethod
     def _validate_dataset_identity(
@@ -89,6 +95,18 @@ class V7OrderFlowConfirmationStrategy(BaseStrategy):
 
         return frozenset(self._missing_bucket_timestamps)
 
+    @property
+    def suppressed_nonreference_candidate_timestamps(self) -> frozenset[datetime]:
+        """Internal V6 BUYs excluded because they are absent from the schedule."""
+
+        return frozenset(self._suppressed_nonreference_candidate_timestamps)
+
+    @property
+    def scheduled_candidate_conflict_timestamps(self) -> frozenset[datetime]:
+        """Positive-flow scheduled entries blocked by divergent V7 state."""
+
+        return frozenset(self._scheduled_candidate_conflict_timestamps)
+
     @staticmethod
     def quote_flow_confirms(
         *,
@@ -110,30 +128,52 @@ class V7OrderFlowConfirmationStrategy(BaseStrategy):
 
     def evaluate(self, context: StrategyContext) -> StrategyDecision:
         v6_decision = self._v6_strategy.evaluate(context)
-        if v6_decision.action is not StrategyAction.ENTER_LONG:
+        signal_time = self._utc(context.timestamp)
+        if signal_time not in self._frozen_v6_entry_signal_times:
+            if v6_decision.action is StrategyAction.ENTER_LONG:
+                self._suppressed_nonreference_candidate_timestamps.add(signal_time)
+                return self._hold(
+                    "Internal V6 BUY is absent from the frozen reference schedule",
+                    status="OUTSIDE_FROZEN_V6_SCHEDULE",
+                )
             return v6_decision
 
         signal_open_time = self._utc(context.current_candle.timestamp)
         bucket = self._buckets_by_open_time.get(signal_open_time)
         if bucket is None:
             self._missing_bucket_timestamps.add(signal_open_time)
+            if v6_decision.action is StrategyAction.EXIT_LONG:
+                return v6_decision
             return self._hold(
                 "Exact completed order-flow bucket is unavailable",
                 status="MISSING_EXACT_BUCKET",
             )
         if bucket.bucket_close_time > self._utc(context.timestamp):
+            if v6_decision.action is StrategyAction.EXIT_LONG:
+                return v6_decision
             return self._hold(
                 "Order-flow bucket was not complete at V6 signal time",
                 status="INCOMPLETE_BUCKET",
             )
-        if not self.quote_flow_confirms(
+        confirmed = self.quote_flow_confirms(
             taker_buy_quote_volume=bucket.taker_buy_quote_volume,
             taker_sell_quote_volume=bucket.taker_sell_quote_volume,
             total_quote_volume=bucket.total_quote_volume,
-        ):
+        )
+        if not confirmed:
+            if v6_decision.action is StrategyAction.EXIT_LONG:
+                return v6_decision
             return self._hold(
                 "Current signal-candle taker-buy quote volume does not dominate",
                 status="NON_POSITIVE_QUOTE_IMBALANCE",
+            )
+        if v6_decision.action is not StrategyAction.ENTER_LONG:
+            self._scheduled_candidate_conflict_timestamps.add(signal_time)
+            if v6_decision.action is StrategyAction.EXIT_LONG:
+                return v6_decision
+            return self._hold(
+                "Frozen positive-flow V6 candidate conflicts with V7 state",
+                status="FROZEN_SCHEDULE_STATE_CONFLICT",
             )
         return v6_decision
 
