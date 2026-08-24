@@ -1,0 +1,164 @@
+{
+  "anti_overfitting": {
+    "alternate_funding_threshold_testing": false,
+    "forbidden_automatic_followups_if_v8_h0_fails": [
+      "FUNDING_RATE_LESS_THAN_ZERO",
+      "FUNDING_RATE_LESS_THAN_NEGATIVE_0_0001",
+      "FUNDING_PERCENTILE_FILTER",
+      "FUNDING_CHANGE_FILTER",
+      "FUNDING_AND_OPEN_INTEREST_FILTER",
+      "FUNDING_AND_PREMIUM_FILTER"
+    ],
+    "parameter_search": false,
+    "separate_justification_and_preregistration_required": true
+  },
+  "baseline_id": "V8_H0",
+  "costs": {
+    "base": {
+      "fee_bps_per_side": "10",
+      "slippage_bps_per_side": "2"
+    },
+    "stress_2x": {
+      "fee_bps_per_side": "20",
+      "slippage_bps_per_side": "4"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "downloaded": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": 11,
+    "only_dataset_definition_sha256": "ea656661ad25924077f9c8a7f7dca709b8762046e60b6c30c2ca8cefdaa2bea2",
+    "only_dataset_id": "eec764735d270f9d",
+    "research_data_status": "CONSUMED_RESEARCH_DATA"
+  },
+  "definition_sha256": "089b62c96a7de9798e4e060f3e4f4e85fe00a6b93a293ddc5f7b4d798d07ff7d",
+  "derivatives_context_dataset": {
+    "context_market": "BTCUSDT_BINANCE_PUBLIC_USDM_PERPETUAL",
+    "dataset_id": "eec764735d270f9d",
+    "definition_sha256": "ea656661ad25924077f9c8a7f7dca709b8762046e60b6c30c2ca8cefdaa2bea2",
+    "funding_field": "LATEST_KNOWN_FUNDING_RATE",
+    "funding_timestamp_field": "FUNDING_TIMESTAMP",
+    "required_research_buckets": 95040,
+    "source": "BINANCE_PUBLIC_USDM_FUNDINGRATE",
+    "spot_context_interval": "15m"
+  },
+  "evaluation": {
+    "metrics": [
+      "TOTAL_TRADES",
+      "GROSS_EXPECTANCY_R_PER_TRADE",
+      "NET_EXPECTANCY_R_PER_TRADE",
+      "PROFIT_FACTOR_R",
+      "WIN_RATE",
+      "MAXIMUM_DRAWDOWN_PERCENT",
+      "POSITIVE_NET_WINDOWS_OUT_OF_11",
+      "STRESS_2X_NET_EXPECTANCY_R_PER_TRADE",
+      "TRADES_PER_DAY",
+      "NET_R_PER_DAY"
+    ],
+    "reference_comparison_metrics": [
+      "V8_MINUS_V6_GROSS_EXPECTANCY_R",
+      "V8_MINUS_V6_NET_EXPECTANCY_R",
+      "V8_MINUS_V6_PROFIT_FACTOR_R",
+      "WINDOWS_V8_NET_RESULT_BETTER_THAN_V6"
+    ]
+  },
+  "execution_risk_and_exit": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "break_even_stop": false,
+    "cooldown_bars": 4,
+    "early_failure_exit": false,
+    "execution": "NEXT_BAR_OPEN",
+    "initial_stop_distance": "MAX_OF_FROZEN_ATR14_4H_AND_ACTUAL_ENTRY_FILL_TIMES_0.0096",
+    "maximum_hold_15m_bars": 96,
+    "minimum_stop_distance_bps": "96",
+    "reward_risk_ratio": "2",
+    "take_profit": "ACTUAL_ENTRY_FILL_PLUS_2R",
+    "trailing_stop": false
+  },
+  "frozen_v6_reference": {
+    "candidate_schedule": "FROZEN_V6_H0_CLOSED_SIGNAL_CANDIDATES",
+    "eligible_windows": 11,
+    "gross_expectancy_r_per_trade": "+0.04722009245553381286395292467",
+    "net_expectancy_r_per_trade": "-0.1366917232474779417819851766",
+    "profit_factor_r": "0.7695960517596068371318908235",
+    "run_id": "e1eef7bdd0c37ad4",
+    "schedule_must_be_used_directly": true,
+    "strategy": "V6_H0_COST_AWARE_MTF_PULLBACK_CONTINUATION",
+    "v6_must_not_be_reevaluated_against_v8_account_state": true
+  },
+  "funding_filter": {
+    "all_conditions_required": true,
+    "comparison": "FUNDING_RATE_LESS_THAN_OR_EQUAL_TO_ZERO",
+    "conditions": [
+      "CANDIDATE_IS_IN_FROZEN_V6_H0_SCHEDULE",
+      "FUNDING_RECORD_PRESENT",
+      "FUNDING_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_SPOT_SIGNAL_CLOSE",
+      "FUNDING_RATE_LESS_THAN_OR_EQUAL_TO_ZERO"
+    ],
+    "decision_time": "BTCUSDC_SPOT_SIGNAL_CANDLE_CLOSE",
+    "future_fill_allowed": false,
+    "future_funding_entry_rule": "REJECT_CANDIDATE",
+    "input": "LATEST_CAUSALLY_KNOWN_BTCUSDT_USDM_FUNDING_RATE",
+    "interpolation_allowed": false,
+    "missing_funding_entry_rule": "REJECT_CANDIDATE",
+    "new_feature_count": 1,
+    "positive_funding_qualifies": false,
+    "zero_funding_qualifies": true
+  },
+  "market": {
+    "direction": "LONG_ONLY",
+    "execution_interval": "15m",
+    "market_type": "BINANCE_PUBLIC_SPOT",
+    "regime_interval": "4h",
+    "symbol": "BTCUSDC"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "combined_net_expectancy_r_gt": "0",
+    "minimum_positive_net_windows": 7,
+    "profit_factor_r_gt": "1",
+    "required_eligible_windows": 11,
+    "support_gate_must_pass": true
+  },
+  "reference_relationship": {
+    "diagnostics": [
+      "V6_FROZEN_CANDIDATE_COUNT",
+      "V8_RETAINED_CANDIDATE_COUNT",
+      "FILTERED_OUT_POSITIVE_OR_MISSING_FUNDING_COUNT",
+      "NON_V6_ENTRY_COUNT"
+    ],
+    "may_create_non_v6_entry": false,
+    "may_remove_v6_entries": true,
+    "relationship": "STRICT_FILTER_OF_FROZEN_V6_H0_CANDIDATES",
+    "required_non_v6_entry_count": 0
+  },
+  "research_question": "DO_FROZEN_V6_H0_LONG_ENTRIES_IMPROVE_WHEN_BTCUSDT_USDM_PERPETUAL_FUNDING_IS_NON_POSITIVE_AT_SPOT_SIGNAL_CLOSE",
+  "research_rule": "V8_H0_TESTS_ONE_FROZEN_NON_POSITIVE_FUNDING_FILTER_AS_A_STRICT_FILTER_OF_THE_FROZEN_V6_H0_CANDIDATE_SCHEDULE",
+  "run_id": "089b62c96a7de979",
+  "strategy_family": "FUNDING_FILTERED_V6_CONTINUATION",
+  "support_gate": {
+    "all_conditions_required": true,
+    "combined_gross_expectancy_r_gt_frozen_v6": "+0.04722009245553381286395292467",
+    "combined_net_expectancy_r_gt_frozen_v6": "-0.1366917232474779417819851766",
+    "minimum_windows_net_result_better_than_v6": 7,
+    "profit_factor_r_gt_frozen_v6": "0.7695960517596068371318908235",
+    "required_eligible_consumed_windows": 11,
+    "required_non_v6_entry_count": 0
+  },
+  "version": "8.0",
+  "zero_trade_window_semantics": {
+    "counts_as_net_result_better_than_v6": false,
+    "counts_as_positive_net": false,
+    "fabricate_zero_expectancy_as_improvement": false,
+    "must_report_explicitly": true,
+    "status": "ZERO_TRADES"
+  }
+}
