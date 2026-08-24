@@ -252,3 +252,94 @@ def test_context_serialization_is_deterministic() -> None:
     }), sort_keys=True)
     second = json.dumps(_plain({name: getattr(context, name) for name in context.__slots__}), sort_keys=True)
     assert first == second
+
+def test_optimized_context_lookup_matches_reference_scan() -> None:
+    spot = tuple(candle(index) for index in range(8))
+
+    funding = (
+        FundingRateRecord(
+            BASE + timedelta(minutes=15),
+            Decimal("0.001"),
+        ),
+        FundingRateRecord(
+            BASE + timedelta(minutes=45),
+            Decimal("0.002"),
+        ),
+        FundingRateRecord(
+            BASE + timedelta(minutes=90),
+            Decimal("0.003"),
+        ),
+    )
+
+    mark = tuple(
+        price_kline(
+            index,
+            DerivativesSource.MARK_PRICE,
+            str(20000 + index),
+        )
+        for index in range(8)
+    )
+
+    contexts = build_context_15m(
+        spot_candles=spot,
+        funding=funding,
+        mark=mark,
+    )
+
+    for candle_row, context in zip(
+        spot,
+        contexts,
+        strict=True,
+    ):
+        cutoff = (
+            candle_row.timestamp
+            + timedelta(minutes=15)
+        )
+
+        eligible_funding = tuple(
+            row
+            for row in funding
+            if row.timestamp <= cutoff
+        )
+
+        expected_funding = (
+            eligible_funding[-1]
+            if eligible_funding
+            else None
+        )
+
+        eligible_mark = tuple(
+            row
+            for row in mark
+            if row.close_time <= cutoff
+        )
+
+        expected_mark = (
+            eligible_mark[-1]
+            if eligible_mark
+            else None
+        )
+
+        assert context.latest_known_funding_rate == (
+            expected_funding.funding_rate
+            if expected_funding
+            else None
+        )
+
+        assert context.funding_timestamp == (
+            expected_funding.timestamp
+            if expected_funding
+            else None
+        )
+
+        assert context.mark_price == (
+            expected_mark.close
+            if expected_mark
+            else None
+        )
+
+        assert context.mark_price_timestamp == (
+            expected_mark.close_time
+            if expected_mark
+            else None
+        )
