@@ -1,0 +1,149 @@
+{
+  "definition": {
+    "anti_overfit": {
+      "alternate_oi_horizon_testing": false,
+      "alternate_oi_ratio_testing": false,
+      "alternate_oi_threshold_testing": false,
+      "forbidden": [
+        "OI_LOOKBACK_15_MINUTES",
+        "OI_LOOKBACK_30_MINUTES",
+        "OI_LOOKBACK_120_MINUTES",
+        "OI_NOW_GREATER_THAN_OR_EQUAL_TO_OI_60M",
+        "OI_GROWTH_RATIO_THRESHOLD",
+        "SUM_OPEN_INTEREST_VALUE",
+        "OPEN_INTEREST_AND_FUNDING_FILTER",
+        "OPEN_INTEREST_AND_PREMIUM_FILTER"
+      ],
+      "open_interest_value_variant_testing": false,
+      "parameter_search": false
+    },
+    "baseline_id": "V8_H1",
+    "costs": {
+      "base": {
+        "fee_bps_per_side": 10,
+        "slippage_bps_per_side": 2
+      },
+      "stress": {
+        "fee_bps_per_side": 20,
+        "slippage_bps_per_side": 4
+      }
+    },
+    "data_policy": {
+      "blind_holdout": {
+        "consumed": false,
+        "end": "2026-01-01T00:00:00Z",
+        "evaluated": false,
+        "loaded": false,
+        "revealed": false,
+        "start": "2025-10-01T00:00:00Z",
+        "status": "LOCKED"
+      },
+      "eligible_research_windows": 11,
+      "research_data": "CONSUMED_RESEARCH_DATA_ONLY"
+    },
+    "derivatives_context_dataset": {
+      "context_symbol": "BTCUSDT",
+      "context_venue": "BINANCE_PUBLIC_USDM",
+      "dataset_id": "eec764735d270f9d",
+      "definition_sha256": "ea656661ad25924077f9c8a7f7dca709b8762046e60b6c30c2ca8cefdaa2bea2",
+      "forbidden_source_field": "SUM_OPEN_INTEREST_VALUE",
+      "source": "BINANCE_PUBLIC_USDM_METRICS",
+      "source_field": "SUM_OPEN_INTEREST",
+      "spot_context_interval": "15m"
+    },
+    "evaluation": {
+      "eligible_research_windows": 11,
+      "metrics": [
+        "TOTAL_TRADES",
+        "V6_AND_V8_GROSS_EXPECTANCY_R_PER_TRADE",
+        "V6_AND_V8_NET_EXPECTANCY_R_PER_TRADE",
+        "V6_AND_V8_PROFIT_FACTOR_R",
+        "POSITIVE_NET_WINDOWS",
+        "NET_BETTER_THAN_V6_WINDOWS",
+        "DOUBLED_COST_NET_EXPECTANCY_R_PER_TRADE"
+      ]
+    },
+    "execution_and_risk": {
+      "ambiguous_bar_policy": "STOP_FIRST",
+      "atr": "V6_H0_CAUSAL_SIGNAL_CANDLE_ATR14",
+      "cooldown_bars": 4,
+      "entry_execution": "NEXT_BAR_OPEN",
+      "initial_stop": "V6_H0_ACTUAL_ENTRY_FILL_MINUS_2X_SIGNAL_ATR14",
+      "maximum_hold_bars": 96,
+      "take_profit": "V6_H0_PLUS_2R"
+    },
+    "frozen_v6_reference": {
+      "account_state": "FROZEN_V6_H0_ACCOUNT_STATE_DIRECT",
+      "candidate_schedule": "FROZEN_V6_H0_CANDIDATE_SCHEDULE_DIRECT",
+      "gross_expectancy_r_per_trade": "+0.04722009245553381286395292467",
+      "net_expectancy_r_per_trade": "-0.1366917232474779417819851766",
+      "profit_factor_r": "0.7695960517596068371318908235",
+      "run_id": "e1eef7bdd0c37ad4"
+    },
+    "hypothesis": "Frozen V6-H0 bullish candidates may improve when BTCUSDT perpetual open interest is expanding over the preceding 60 minutes.",
+    "market": {
+      "interval": "15m",
+      "side": "LONG_ONLY",
+      "symbol": "BTCUSDC",
+      "venue": "BINANCE_PUBLIC_SPOT"
+    },
+    "open_interest_filter": {
+      "acceptance_rule": "OI_NOW_STRICTLY_GREATER_THAN_OI_60M",
+      "comparison_horizon": "PRECEDING_60_MINUTES_EXACTLY",
+      "comparison_horizon_minutes": 60,
+      "comparison_is_strict": true,
+      "decision_time": "BTCUSDC_SPOT_SIGNAL_CANDLE_CLOSE",
+      "equality_qualifies": false,
+      "future_fill": false,
+      "future_observation": "REJECT_CANDIDATE",
+      "interpolation": false,
+      "missing_or_unavailable_comparison": "REJECT_CANDIDATE",
+      "new_feature_count": 1,
+      "oi_60m": "CAUSAL_SUM_OPEN_INTEREST_AT_SIGNAL_CLOSE_MINUS_60_MINUTES",
+      "oi_now": "CAUSAL_SUM_OPEN_INTEREST_AT_SIGNAL_CLOSE",
+      "required_conditions": [
+        "CANDIDATE_IS_IN_FROZEN_V6_H0_SCHEDULE",
+        "OI_NOW_OBSERVATION_PRESENT",
+        "OI_60M_OBSERVATION_PRESENT",
+        "OI_NOW_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_SPOT_SIGNAL_CLOSE",
+        "OI_60M_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_SPOT_SIGNAL_CLOSE_MINUS_60_MINUTES",
+        "OI_NOW_STRICTLY_GREATER_THAN_OI_60M"
+      ]
+    },
+    "progression_gate": {
+      "all_required": true,
+      "conditions": [
+        "V8_NET_EXPECTANCY_R_STRICTLY_GREATER_THAN_0",
+        "V8_PROFIT_FACTOR_R_STRICTLY_GREATER_THAN_1",
+        "V8_POSITIVE_NET_WINDOWS_AT_LEAST_7_OF_11"
+      ],
+      "requires_support_gate_pass": true
+    },
+    "research_rule": "PREREGISTRATION_ONLY_NO_REPLAY_OR_OUTCOME_INSPECTION",
+    "strategy_family": "OPEN_INTEREST_EXPANSION_FILTERED_V6_CONTINUATION",
+    "subset_relationship": {
+      "diagnostic_counts": [
+        "FROZEN_V6_CANDIDATE_COUNT",
+        "V8_RETAINED_COUNT",
+        "FILTERED_OUT_NONEXPANDING_OR_MISSING_OPEN_INTEREST_COUNT",
+        "NON_V6_ENTRY_COUNT"
+      ],
+      "non_v6_entry_count_required": 0,
+      "v8_may_only": "REMOVE_FROZEN_V6_H0_CANDIDATES"
+    },
+    "support_gate": {
+      "all_required": true,
+      "conditions": [
+        "ELIGIBLE_RESEARCH_WINDOWS_EQUALS_11",
+        "NON_V6_ENTRY_COUNT_EQUALS_0",
+        "V8_GROSS_EXPECTANCY_R_STRICTLY_GREATER_THAN_FROZEN_V6_GROSS_EXPECTANCY_R",
+        "V8_NET_EXPECTANCY_R_STRICTLY_GREATER_THAN_FROZEN_V6_NET_EXPECTANCY_R",
+        "V8_PROFIT_FACTOR_R_STRICTLY_GREATER_THAN_FROZEN_V6_PROFIT_FACTOR_R",
+        "V8_NET_RESULT_BETTER_THAN_V6_IN_AT_LEAST_7_OF_11_WINDOWS"
+      ]
+    },
+    "version": "8.1"
+  },
+  "definition_sha256": "6e7c9147b8c3187e3368a9d559ac1f483b8a02dc1be62ad28d14d8ce62bd1ea8",
+  "run_id": "6e7c9147b8c3187e"
+}
