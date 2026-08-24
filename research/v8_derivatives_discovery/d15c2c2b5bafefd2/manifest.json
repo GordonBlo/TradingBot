@@ -1,0 +1,362 @@
+{
+  "baseline_id": "V8_DERIVATIVES_DISCOVERY_DIAGNOSTIC",
+  "causal_alignment": {
+    "all_source_timestamps_must_be_less_than_or_equal_to_bucket_close": true,
+    "decision_time": "BTCUSDC_SPOT_SIGNAL_CANDLE_CLOSE_T",
+    "horizon_change_feature": "CURRENT_SOURCE_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_T_AND_HISTORICAL_SOURCE_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_T_MINUS_H",
+    "level_feature": "SOURCE_TIMESTAMP_LESS_THAN_OR_EQUAL_TO_T",
+    "metrics_maximum_source_age_minutes": 5,
+    "missing_or_future_observation": "PRESERVE_AS_MISSING_NO_INTERPOLATION_NO_FUTURE_FILL",
+    "spot_return_60_minutes": "(BTCUSDC_CLOSE_AT_T_DIVIDED_BY_BTCUSDC_CLOSE_AT_T_MINUS_60_MINUTES)_MINUS_1"
+  },
+  "classification": {
+    "no_stable_derivatives_signal": {
+      "definition": "NO_AGGREGATE_EVIDENCE_ABOVE_BASELINE_OR_PERMUTATION_NULL"
+    },
+    "stable_derivatives_signal": {
+      "all_required": true,
+      "conditions": [
+        "AGGREGATE_HELD_OUT_PREDICTION_GROSS_R_SPEARMAN_STRICTLY_POSITIVE",
+        "ONE_SIDED_PERMUTATION_P_VALUE_LESS_THAN_OR_EQUAL_TO_0_05",
+        "HELD_OUT_MODEL_MSE_STRICTLY_LESS_THAN_CONSTANT_TRAINING_BASELINE_MSE",
+        "POSITIVE_PREDICTIVE_DIRECTION_IN_AT_LEAST_7_OF_11_WINDOWS",
+        "AT_LEAST_ONE_FROZEN_ECONOMIC_FEATURE_OR_INTERACTION_HAS_MODAL_NONZERO_COEFFICIENT_SIGN_IN_AT_LEAST_7_OF_11_FOLDS"
+      ]
+    },
+    "weak_or_unstable_signal": {
+      "aggregate_evidence": [
+        "AGGREGATE_HELD_OUT_PREDICTION_GROSS_R_SPEARMAN_STRICTLY_POSITIVE",
+        "HELD_OUT_MODEL_MSE_STRICTLY_LESS_THAN_CONSTANT_TRAINING_BASELINE_MSE"
+      ],
+      "definition": "SOME_AGGREGATE_EVIDENCE_EXISTS_BUT_STABLE_DERIVATIVES_SIGNAL_CONDITIONS_FAIL"
+    }
+  },
+  "dataset_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "downloaded": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "eligible_windows": [
+      "W002",
+      "W003",
+      "W004",
+      "W005",
+      "W006",
+      "W007",
+      "W008",
+      "W009",
+      "W010",
+      "W012",
+      "W013"
+    ],
+    "research_data_status": "CONSUMED_RESEARCH_DATA_ONLY"
+  },
+  "definition_sha256": "d15c2c2b5bafefd22ed1f094bf824b3fc3cc1e8a664e9622645843423a0a366e",
+  "derivatives_context_dataset": {
+    "dataset_id": "eec764735d270f9d",
+    "definition_sha256": "ea656661ad25924077f9c8a7f7dca709b8762046e60b6c30c2ca8cefdaa2bea2",
+    "metrics_ratio_fields": [
+      "COUNT_TOPTRADER_LONG_SHORT_RATIO",
+      "SUM_TOPTRADER_LONG_SHORT_RATIO",
+      "COUNT_LONG_SHORT_RATIO",
+      "SUM_TAKER_LONG_SHORT_VOL_RATIO"
+    ],
+    "metrics_ratio_source": "PARSED_FUTURESMETRICSRECORD_FROM_IMMUTABLE_METRICS_ARCHIVES",
+    "only_checksum_verified_official_binance_sources": true
+  },
+  "feature_family_constraints": {
+    "no_alternative_horizons": true,
+    "no_arbitrary_polynomial_combinations": true,
+    "no_feature_threshold_mining": true,
+    "no_oi_value_variant": true,
+    "only_fixed_interactions": [
+      "SPOT_RETURN_60M_X_OI_CHANGE_60M",
+      "SPOT_RETURN_60M_X_DERIVED_PREMIUM_CHANGE_60M",
+      "SPOT_RETURN_60M_X_TAKER_FLOW_DEVIATION_FROM_1"
+    ]
+  },
+  "fixed_features": [
+    {
+      "formula": "FUNDING_RATE_AT_T",
+      "name": "FUNDING_RATE_LEVEL",
+      "source": "LATEST_KNOWN_FUNDING_RATE",
+      "timestamp": "FUNDING_TIMESTAMP"
+    },
+    {
+      "formula": "MINUTES_BETWEEN_T_AND_FUNDING_TIMESTAMP",
+      "name": "FUNDING_AGE_MINUTES",
+      "source": "FUNDING_TIMESTAMP",
+      "timestamp": "FUNDING_TIMESTAMP"
+    },
+    {
+      "formula": "SUM_OPEN_INTEREST_AT_T",
+      "name": "OI_LEVEL",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP"
+    },
+    {
+      "formula": "OI_AT_T_MINUS_OI_AT_T_MINUS_H",
+      "horizon_minutes": 15,
+      "name": "OI_CHANGE_15_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP"
+    },
+    {
+      "formula": "OI_AT_T_MINUS_OI_AT_T_MINUS_H",
+      "horizon_minutes": 60,
+      "name": "OI_CHANGE_60_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP"
+    },
+    {
+      "formula": "OI_AT_T_MINUS_OI_AT_T_MINUS_H",
+      "horizon_minutes": 240,
+      "name": "OI_CHANGE_240_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP"
+    },
+    {
+      "formula": "(OI_AT_T_MINUS_OI_AT_T_MINUS_H)_DIVIDED_BY_OI_AT_T_MINUS_H",
+      "horizon_minutes": 15,
+      "name": "OI_FRACTIONAL_CHANGE_15_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP",
+      "zero_or_missing_denominator": "MISSING_FEATURE"
+    },
+    {
+      "formula": "(OI_AT_T_MINUS_OI_AT_T_MINUS_H)_DIVIDED_BY_OI_AT_T_MINUS_H",
+      "horizon_minutes": 60,
+      "name": "OI_FRACTIONAL_CHANGE_60_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP",
+      "zero_or_missing_denominator": "MISSING_FEATURE"
+    },
+    {
+      "formula": "(OI_AT_T_MINUS_OI_AT_T_MINUS_H)_DIVIDED_BY_OI_AT_T_MINUS_H",
+      "horizon_minutes": 240,
+      "name": "OI_FRACTIONAL_CHANGE_240_MINUTES",
+      "source": "SUM_OPEN_INTEREST",
+      "timestamp": "OPEN_INTEREST_TIMESTAMP",
+      "zero_or_missing_denominator": "MISSING_FEATURE"
+    },
+    {
+      "formula": "SUM_TAKER_LONG_SHORT_VOL_RATIO_AT_T",
+      "name": "TAKER_LONG_SHORT_VOLUME_RATIO_LEVEL",
+      "source": "SUM_TAKER_LONG_SHORT_VOL_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T_MINUS_RATIO_AT_T_MINUS_H",
+      "horizon_minutes": 15,
+      "name": "TAKER_LONG_SHORT_VOLUME_RATIO_CHANGE_15_MINUTES",
+      "source": "SUM_TAKER_LONG_SHORT_VOL_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T_MINUS_RATIO_AT_T_MINUS_H",
+      "horizon_minutes": 60,
+      "name": "TAKER_LONG_SHORT_VOLUME_RATIO_CHANGE_60_MINUTES",
+      "source": "SUM_TAKER_LONG_SHORT_VOL_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T",
+      "horizon_minutes": null,
+      "name": "COUNT_TOPTRADER_LONG_SHORT_RATIO_LEVEL",
+      "source": "COUNT_TOPTRADER_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T_MINUS_RATIO_AT_T_MINUS_60_MINUTES",
+      "horizon_minutes": 60,
+      "name": "COUNT_TOPTRADER_LONG_SHORT_RATIO_CHANGE_60_MINUTES",
+      "source": "COUNT_TOPTRADER_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T",
+      "horizon_minutes": null,
+      "name": "SUM_TOPTRADER_LONG_SHORT_RATIO_LEVEL",
+      "source": "SUM_TOPTRADER_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T_MINUS_RATIO_AT_T_MINUS_60_MINUTES",
+      "horizon_minutes": 60,
+      "name": "SUM_TOPTRADER_LONG_SHORT_RATIO_CHANGE_60_MINUTES",
+      "source": "SUM_TOPTRADER_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T",
+      "horizon_minutes": null,
+      "name": "COUNT_LONG_SHORT_RATIO_LEVEL",
+      "source": "COUNT_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "RATIO_AT_T_MINUS_RATIO_AT_T_MINUS_60_MINUTES",
+      "horizon_minutes": 60,
+      "name": "COUNT_LONG_SHORT_RATIO_CHANGE_60_MINUTES",
+      "source": "COUNT_LONG_SHORT_RATIO",
+      "timestamp": "METRICS_TIMESTAMP"
+    },
+    {
+      "formula": "PREMIUM_INDEX_CLOSE_AT_T",
+      "name": "PREMIUM_INDEX_CLOSE_LEVEL",
+      "source": "PREMIUM_INDEX_CLOSE",
+      "timestamp": "PREMIUM_INDEX_TIMESTAMP"
+    },
+    {
+      "formula": "PREMIUM_INDEX_CLOSE_AT_T_MINUS_PREMIUM_INDEX_CLOSE_AT_T_MINUS_H",
+      "horizon_minutes": 15,
+      "name": "PREMIUM_INDEX_CLOSE_CHANGE_15_MINUTES",
+      "source": "PREMIUM_INDEX_CLOSE",
+      "timestamp": "PREMIUM_INDEX_TIMESTAMP"
+    },
+    {
+      "formula": "PREMIUM_INDEX_CLOSE_AT_T_MINUS_PREMIUM_INDEX_CLOSE_AT_T_MINUS_H",
+      "horizon_minutes": 60,
+      "name": "PREMIUM_INDEX_CLOSE_CHANGE_60_MINUTES",
+      "source": "PREMIUM_INDEX_CLOSE",
+      "timestamp": "PREMIUM_INDEX_TIMESTAMP"
+    },
+    {
+      "formula": "(MARK_PRICE_MINUS_INDEX_PRICE)_DIVIDED_BY_INDEX_PRICE",
+      "name": "DERIVED_MARK_INDEX_PREMIUM_LEVEL",
+      "source": "MARK_AND_INDEX_PRICE_CLOSES",
+      "timestamp": "MARK_PRICE_TIMESTAMP_AND_INDEX_PRICE_TIMESTAMP"
+    },
+    {
+      "formula": "DERIVED_PREMIUM_AT_T_MINUS_DERIVED_PREMIUM_AT_T_MINUS_H",
+      "horizon_minutes": 15,
+      "name": "DERIVED_MARK_INDEX_PREMIUM_CHANGE_15_MINUTES",
+      "source": "MARK_AND_INDEX_PRICE_CLOSES",
+      "timestamp": "MARK_PRICE_TIMESTAMP_AND_INDEX_PRICE_TIMESTAMP"
+    },
+    {
+      "formula": "DERIVED_PREMIUM_AT_T_MINUS_DERIVED_PREMIUM_AT_T_MINUS_H",
+      "horizon_minutes": 60,
+      "name": "DERIVED_MARK_INDEX_PREMIUM_CHANGE_60_MINUTES",
+      "source": "MARK_AND_INDEX_PRICE_CLOSES",
+      "timestamp": "MARK_PRICE_TIMESTAMP_AND_INDEX_PRICE_TIMESTAMP"
+    },
+    {
+      "formula": "SPOT_RETURN_60_MINUTES_TIMES_OI_CHANGE_60_MINUTES",
+      "horizon_minutes": 60,
+      "name": "SPOT_RETURN_60M_X_OI_CHANGE_60M",
+      "source": "BTCUSDC_SPOT_CLOSE_AND_SUM_OPEN_INTEREST",
+      "timestamp": "SPOT_CLOSE_AND_OPEN_INTEREST_TIMESTAMP"
+    },
+    {
+      "formula": "SPOT_RETURN_60_MINUTES_TIMES_DERIVED_MARK_INDEX_PREMIUM_CHANGE_60_MINUTES",
+      "horizon_minutes": 60,
+      "name": "SPOT_RETURN_60M_X_DERIVED_PREMIUM_CHANGE_60M",
+      "source": "BTCUSDC_SPOT_CLOSE_AND_MARK_INDEX_PRICES",
+      "timestamp": "SPOT_CLOSE_MARK_PRICE_TIMESTAMP_AND_INDEX_PRICE_TIMESTAMP"
+    },
+    {
+      "formula": "SPOT_RETURN_60_MINUTES_TIMES_(TAKER_RATIO_AT_T_MINUS_1)",
+      "horizon_minutes": 60,
+      "name": "SPOT_RETURN_60M_X_TAKER_FLOW_DEVIATION_FROM_1",
+      "source": "BTCUSDC_SPOT_CLOSE_AND_SUM_TAKER_LONG_SHORT_VOL_RATIO",
+      "timestamp": "SPOT_CLOSE_AND_METRICS_TIMESTAMP"
+    }
+  ],
+  "leave_one_window_out": {
+    "constant_baseline": "TRAINING_FOLD_MEAN_GROSS_R",
+    "fold_count": 11,
+    "held_out_unit": "ENTIRE_RESEARCH_WINDOW",
+    "preprocessing": {
+      "feature_median_imputation": "FIT_ON_TRAINING_FOLD_ONLY",
+      "raw_missingness": "PRESERVED_AND_REPORTED",
+      "standardization": "FIT_ON_TRAINING_FOLD_ONLY",
+      "zero_variance_feature": "TRANSFORM_TO_ZERO_WITH_COEFFICIENT_REPORTED_AS_ZERO"
+    },
+    "primary_model": {
+      "family": "RIDGE_LINEAR_REGRESSION",
+      "feature_selection_using_held_out_outcomes": false,
+      "fit_intercept": true,
+      "hyperparameter_search": false,
+      "regularization_alpha": "1.0"
+    },
+    "training_windows_per_fold": 10
+  },
+  "market": {
+    "derivatives_context_market": "BTCUSDT_BINANCE_PUBLIC_USDM_PERPETUAL",
+    "direction": "LONG_ONLY",
+    "execution_interval": "15m",
+    "traded_market": "BTCUSDC_BINANCE_PUBLIC_SPOT"
+  },
+  "null_comparison": {
+    "alpha": "0.05",
+    "alternative": "ONE_SIDED_POSITIVE",
+    "p_value": "(1_PLUS_PERMUTED_STATISTICS_GREATER_THAN_OR_EQUAL_TO_OBSERVED)_DIVIDED_BY_(1_PLUS_PERMUTATION_COUNT)",
+    "permutation_count": 1000,
+    "scheme": "DETERMINISTIC_WITHIN_WINDOW_GROSS_R_PERMUTATION",
+    "seed": 20260824,
+    "statistic": "AGGREGATE_HELD_OUT_PREDICTION_VS_GROSS_R_SPEARMAN"
+  },
+  "prohibitions": {
+    "entry_filter": false,
+    "hyperparameter_sweep": false,
+    "neural_network": false,
+    "post_result_alternative_horizons": false,
+    "profitability_optimization": false,
+    "tree_model_search": false,
+    "v8_trading_replay": false
+  },
+  "purpose": "DETERMINE_WHETHER_BTCUSDT_DERIVATIVES_CONTEXT_CONTAINS_STABLE_OUT_OF_WINDOW_INFORMATION_ABOUT_FROZEN_V6_H0_TRADE_QUALITY",
+  "research_rule": "PREREGISTRATION_ONLY_NO_DIAGNOSTIC_EXECUTION_OR_OUTCOME_INSPECTION",
+  "run_id": "d15c2c2b5bafefd2",
+  "stability_outputs": [
+    "AGGREGATE_HELD_OUT_PREDICTION_VS_GROSS_R_SPEARMAN",
+    "HELD_OUT_PREDICTION_ERROR_VS_CONSTANT_TRAINING_BASELINE",
+    "COEFFICIENT_SIGN_CONSISTENCY_ACROSS_FOLDS",
+    "PER_WINDOW_PREDICTIVE_DIRECTION",
+    "FEATURE_MISSINGNESS"
+  ],
+  "targets": {
+    "primary": "FROZEN_V6_TRADE_FRICTIONLESS_GROSS_R",
+    "secondary_descriptive": "FROZEN_V6_TRADE_NET_R",
+    "target_is_not_used_for_entry_filter_or_threshold_selection": true
+  },
+  "univariate_diagnostics": {
+    "effect_direction": "WINNER_MEAN_FEATURE_MINUS_LOSER_MEAN_FEATURE",
+    "loser_definition": "GROSS_R_LESS_THAN_OR_EQUAL_TO_0",
+    "per_feature_outputs": [
+      "VALID_SAMPLE_COUNT",
+      "SPEARMAN_CORRELATION_WITH_GROSS_R",
+      "WINNER_LOSER_COHENS_D_EFFECT_SIZE",
+      "SIGN_CONSISTENCY_ACROSS_11_WINDOWS"
+    ],
+    "sign_consistency": "WINDOW_SPEARMAN_SIGN_MATCHES_AGGREGATE_SPEARMAN_SIGN",
+    "winner_definition": "GROSS_R_STRICTLY_GREATER_THAN_0"
+  },
+  "universe": {
+    "candidate_count": 443,
+    "candidate_schedule": "FROZEN_V6_H0_CLOSED_SIGNAL_CANDIDATES_DIRECT",
+    "eligible_consumed_windows": [
+      "W002",
+      "W003",
+      "W004",
+      "W005",
+      "W006",
+      "W007",
+      "W008",
+      "W009",
+      "W010",
+      "W012",
+      "W013"
+    ],
+    "frozen_v6_h0_run_id": "e1eef7bdd0c37ad4",
+    "window_count": 11
+  },
+  "version": "8.2"
+}
