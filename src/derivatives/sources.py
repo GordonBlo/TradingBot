@@ -126,3 +126,42 @@ def build_sample_locations(
             )
         )
     return tuple(output)
+
+
+def build_archive_location(
+    source: DerivativesSource,
+    period: date,
+    *,
+    cadence: str,
+    root: str | Path = "data/derivatives/raw",
+) -> ArchiveLocation:
+    """Build one fixed official USD-M archive location."""
+
+    definition = source_definition(source)
+    if cadence == "daily" and not definition.daily_available:
+        raise ValueError(f"{source.value} has no official daily archive.")
+    if cadence == "monthly" and not definition.monthly_available:
+        raise ValueError(f"{source.value} has no official monthly archive.")
+    if cadence not in {"daily", "monthly"}:
+        raise ValueError("Derivatives archive cadence is invalid.")
+    period_text = period.isoformat() if cadence == "daily" else period.strftime("%Y-%m")
+    base = "https://data.binance.vision/data/futures/um"
+    if source is DerivativesSource.FUNDING_RATE:
+        filename = f"BTCUSDT-fundingRate-{period_text}.zip"
+        remote = f"{base}/{cadence}/{source.value}/BTCUSDT/{filename}"
+        local = Path(root) / "um" / source.value / "BTCUSDT" / cadence / f"{period.year:04d}" / filename
+    elif source is DerivativesSource.METRICS:
+        filename = f"BTCUSDT-metrics-{period_text}.zip"
+        remote = f"{base}/{cadence}/{source.value}/BTCUSDT/{filename}"
+        local = Path(root) / "um" / source.value / "BTCUSDT" / cadence / f"{period.year:04d}" / f"{period.month:02d}" / filename
+    else:
+        filename = f"BTCUSDT-15m-{period_text}.zip"
+        remote = f"{base}/{cadence}/{source.value}/BTCUSDT/15m/{filename}"
+        tail = (f"{period.year:04d}",) if cadence == "monthly" else (f"{period.year:04d}", f"{period.month:02d}")
+        local = Path(root) / "um" / source.value / "BTCUSDT" / "15m" / cadence / Path(*tail) / filename
+    return ArchiveLocation(
+        url=remote,
+        checksum_url=f"{remote}.CHECKSUM",
+        destination=local,
+        checksum_destination=local.with_suffix(".zip.CHECKSUM"),
+    )

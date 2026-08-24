@@ -47,9 +47,17 @@ def build_context_15m(
     # Build searchable timestamp indexes exactly once per source.
     funding_timestamps = tuple(row.timestamp for row in funding)
     metrics_timestamps = tuple(row.timestamp for row in metrics)
-    mark_timestamps = tuple(row.close_time for row in mark)
-    index_timestamps = tuple(row.close_time for row in index)
-    premium_timestamps = tuple(row.close_time for row in premium)
+    def exact_price_rows(records: tuple[DerivativesPriceKline, ...]):
+        output = {}
+        for row in records:
+            if row.open_time in output:
+                raise ValueError("Derivatives price source has duplicate intervals.")
+            output[row.open_time] = row
+        return output
+
+    mark_by_open = exact_price_rows(mark)
+    index_by_open = exact_price_rows(index)
+    premium_by_open = exact_price_rows(premium)
 
     output = []
 
@@ -71,21 +79,17 @@ def build_context_15m(
             metrics_timestamps,
             bucket_close,
         )
-        mark_row = _latest(
-            mark,
-            mark_timestamps,
-            bucket_close,
-        )
-        index_row = _latest(
-            index,
-            index_timestamps,
-            bucket_close,
-        )
-        premium_row = _latest(
-            premium,
-            premium_timestamps,
-            bucket_close,
-        )
+        if (
+            metrics_row is not None
+            and bucket_close - metrics_row.timestamp > timedelta(minutes=5)
+        ):
+            metrics_row = None
+        mark_row = mark_by_open.get(candle.timestamp)
+        index_row = index_by_open.get(candle.timestamp)
+        premium_row = premium_by_open.get(candle.timestamp)
+        mark_row = mark_row if mark_row is not None and mark_row.close_time <= bucket_close else None
+        index_row = index_row if index_row is not None and index_row.close_time <= bucket_close else None
+        premium_row = premium_row if premium_row is not None and premium_row.close_time <= bucket_close else None
 
         derived = (
             DerivativesContext15m.derive_premium(

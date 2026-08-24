@@ -99,6 +99,59 @@ def analyze_coverage(
     )
 
 
+def analyze_funding_coverage(records: tuple, *, source: str = "fundingRate") -> CoverageResult:
+    """Audit funding gaps using each record's archived interval declaration."""
+
+    base = analyze_coverage(
+        records,
+        source=source,
+        timestamp_field="timestamp",
+    )
+    if not records:
+        return base
+    missing = 0
+    issues = list(base.issues)
+    tolerance = timedelta(seconds=1)
+    for previous, current in zip(records, records[1:]):
+        if previous.funding_interval_hours is None:
+            continue
+        expected = timedelta(hours=float(previous.funding_interval_hours))
+        delta = current.timestamp - previous.timestamp
+        if delta > expected + tolerance:
+            count = max(1, int(delta / expected) - 1)
+            missing += count
+            issues.append(
+                ContinuityIssue(
+                    source,
+                    "MISSING_FUNDING_EVENTS",
+                    previous.timestamp,
+                    f"{count} events before {current.timestamp.isoformat()}",
+                )
+            )
+        elif delta < expected - tolerance:
+            issues.append(
+                ContinuityIssue(
+                    source,
+                    "IRREGULAR_FUNDING_INTERVAL",
+                    current.timestamp,
+                    str(delta),
+                )
+            )
+    classification = base.classification
+    if missing and classification is CoverageClassification.COMPLETE:
+        classification = CoverageClassification.GAPPED
+    return CoverageResult(
+        classification,
+        base.rows,
+        base.duplicate_timestamps,
+        base.duplicate_exact_records,
+        missing,
+        base.first_timestamp,
+        base.last_timestamp,
+        tuple(issues),
+    )
+
+
 def validate_archive_boundary(previous: tuple, current: tuple, *, timestamp_field: str) -> tuple[ContinuityIssue, ...]:
     if not previous or not current:
         return ()
@@ -111,4 +164,3 @@ def validate_archive_boundary(previous: tuple, current: tuple, *, timestamp_fiel
             ContinuityIssue("archive_boundary", "DUPLICATE_TIMESTAMP", current_time, "Boundary timestamps overlap."),
         )
     return ()
-
