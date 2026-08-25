@@ -1,0 +1,119 @@
+{
+  "baseline_id": "V8_H2",
+  "chronological_blocks": {
+    "assignment": "ORDERED_SIGNAL_CLOSE_TIMESTAMP_ONLY_BALANCED_CONTIGUOUS_BLOCKS",
+    "block_count": 7,
+    "block_sizes": [
+      42,
+      42,
+      42,
+      42,
+      41,
+      41,
+      41
+    ],
+    "candidate_count": 291,
+    "outcomes_used_for_assignment": false
+  },
+  "data_policy": {
+    "blind_holdout": {
+      "consumed": false,
+      "end": "2026-02-01T00:00:00+00:00",
+      "evaluated": false,
+      "loaded": false,
+      "revealed": false,
+      "start": "2025-08-01T00:00:00+00:00",
+      "status": "LOCKED_BLIND_HOLDOUT"
+    },
+    "only_validation_dataset_id": "52302ca4385f5240"
+  },
+  "definition_sha256": "b334dac73e7469820f96dacc0b145b8c170a3c31e6cee65926abfeaad894c0d4",
+  "execution_risk_and_costs": {
+    "ambiguous_bar_policy": "STOP_FIRST",
+    "base_costs": {
+      "fee_bps_per_side": 10,
+      "slippage_bps_per_side": 2
+    },
+    "cooldown_bars": 4,
+    "doubled_cost_stress": {
+      "descriptive_only": true,
+      "fee_bps_per_side": 20,
+      "slippage_bps_per_side": 4
+    },
+    "entry_execution": "FROZEN_V6_H0_NEXT_BAR_OPEN",
+    "initial_stop": "FROZEN_V6_H0_ACTUAL_FILL_MINUS_MAX_OF_ATR14_4H_AND_FILL_TIMES_0.0096",
+    "maximum_hold_15m_bars": 96,
+    "take_profit": "FROZEN_V6_H0_ACTUAL_FILL_PLUS_2R"
+  },
+  "frozen_v6_reference": {
+    "candidate_schedule": "FROZEN_V6_H0_SIGNAL_CANDIDATE_SCHEDULE_DIRECT",
+    "h2_may_only_remove_v6_candidates": true,
+    "must_not_reevaluate_v6_against_h2_account_state": true,
+    "required_non_v6_entry_count": 0,
+    "run_id": "e1eef7bdd0c37ad4"
+  },
+  "h2_rule": {
+    "acceptance_rule": "DERIVED_MARK_INDEX_PREMIUM_STRICTLY_LESS_THAN_ZERO",
+    "causal_timestamp_rule": "MARK_AND_INDEX_SOURCE_TIMESTAMPS_LESS_THAN_OR_EQUAL_TO_SPOT_SIGNAL_CLOSE",
+    "formula": "(MARK_PRICE_MINUS_INDEX_PRICE)_DIVIDED_BY_INDEX_PRICE",
+    "future_fill": false,
+    "input_sources": [
+      "BTCUSDT_MARK_PRICE_KLINES",
+      "BTCUSDT_INDEX_PRICE_KLINES"
+    ],
+    "interpolation": false,
+    "missing_or_future_mark_or_index_rule": "REJECT_CANDIDATE",
+    "missing_premium_rule": "REJECT_CANDIDATE",
+    "positive_qualifies": false,
+    "zero_qualifies": false
+  },
+  "hypothesis": "Frozen V6-H0 candidates improve when causal BTCUSDT derived mark/index premium is negative.",
+  "permutation_test": {
+    "alternative": "ONE_SIDED_H2_SELECTION_ADVANTAGE_GREATER_THAN_ZERO",
+    "null": "PERMUTE_GROSS_R_LABELS_WITHIN_EACH_CHRONOLOGICAL_BLOCK_KEEPING_SELECTION_FIXED",
+    "p_value_requirement": "STRICTLY_LESS_THAN_0.05",
+    "permutation_count": 10000,
+    "seed": 20260825,
+    "statistic": "H2_GROSS_R_SELECTION_ADVANTAGE_OVER_VALIDATION_V6"
+  },
+  "progression_gate": {
+    "all_conditions_required": true,
+    "conditions": [
+      "H2_NET_EXPECTANCY_R_STRICTLY_GREATER_THAN_0",
+      "H2_PROFIT_FACTOR_R_STRICTLY_GREATER_THAN_1"
+    ],
+    "requires_support_pass": true
+  },
+  "prohibitions": {
+    "alternate_premium_thresholds": false,
+    "outcome_inspection_before_preregistration": false,
+    "parameter_or_block_tuning": false,
+    "retained_vs_filtered_performance_inspection": false,
+    "validation_replay_or_trade_execution": false
+  },
+  "research_rule": "PREREGISTRATION_ONLY_NO_VALIDATION_OUTCOME_INSPECTION",
+  "run_id": "b334dac73e746982",
+  "strategy_family": "DERIVED_MARK_INDEX_PREMIUM_FILTERED_FROZEN_V6_H0",
+  "support_gate": {
+    "all_conditions_required": true,
+    "conditions": [
+      "SUBSET_INTEGRITY_PASSES",
+      "RETAINED_H2_TRADES_AT_LEAST_50",
+      "H2_GROSS_EXPECTANCY_R_STRICTLY_GREATER_THAN_VALIDATION_V6_GROSS_EXPECTANCY_R",
+      "H2_NET_EXPECTANCY_R_STRICTLY_GREATER_THAN_VALIDATION_V6_NET_EXPECTANCY_R",
+      "H2_PROFIT_FACTOR_R_STRICTLY_GREATER_THAN_VALIDATION_V6_PROFIT_FACTOR_R",
+      "H2_GROSS_EXPECTANCY_IMPROVES_IN_AT_LEAST_5_OF_7_CHRONOLOGICAL_BLOCKS",
+      "ONE_SIDED_WITHIN_BLOCK_PERMUTATION_P_VALUE_STRICTLY_LESS_THAN_0.05"
+    ]
+  },
+  "validation_dataset": {
+    "candidate_count": 291,
+    "candidate_universe": "FROZEN_OUTCOME_UNSEEN_V6_H0_CANDIDATES",
+    "classification_required": "VALIDATION_DATA_READY",
+    "dataset_id": "52302ca4385f5240",
+    "market": "BTCUSDC_BINANCE_PUBLIC_SPOT_15M_LONG_ONLY",
+    "window_end": "2022-04-27T00:00:00+00:00",
+    "window_start": "2021-09-29T09:00:00+00:00"
+  },
+  "version": "8.2"
+}
