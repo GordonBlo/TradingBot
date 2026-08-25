@@ -1,0 +1,106 @@
+{
+  "definition": {
+    "classification": {
+      "NO_STABLE_L2_INFORMATION": "none of the stable gates has positive evidence",
+      "STABLE_L2_INFORMATION": {
+        "aggregate_primary_spearman": "> 0",
+        "all_required": true,
+        "model_mse": "< constant_training_baseline_mse",
+        "permutation_p": "< 0.05",
+        "positive_direction_session_fraction": ">= 0.70"
+      },
+      "WEAK_OR_UNSTABLE_L2_INFORMATION": "at least one stable gate has positive evidence, but not all gates pass"
+    },
+    "created_at_utc": "2026-08-25T19:43:16.988810Z",
+    "evaluation": {
+      "baseline": "constant training-target mean",
+      "folds": "chronological expanding session-blocked out-of-sample",
+      "input_imputation": "training-fold median only",
+      "model": "Ridge",
+      "null": "within-session-block target permutation with full fold refit",
+      "permutation_seed": 20260825,
+      "permutation_tail": "one-sided positive held-out Spearman",
+      "permutations": 1000,
+      "preprocessing": "fit on training sessions only",
+      "primary_metric": "held-out Spearman correlation",
+      "ridge_alpha": 1.0,
+      "significance_alpha": 0.05
+    },
+    "experiment": "V9_EARLY_INFORMATION_DIAGNOSTIC",
+    "features": [
+      "spread_bps",
+      "microprice_minus_mid_bps",
+      "depth_imbalance_1",
+      "depth_imbalance_5",
+      "depth_imbalance_10",
+      "depth_imbalance_20",
+      "bid_depth_top_20",
+      "ask_depth_top_20",
+      "bid_depth_concentration",
+      "ask_depth_concentration",
+      "bid_depth_added",
+      "bid_depth_removed",
+      "ask_depth_added",
+      "ask_depth_removed",
+      "update_intensity"
+    ],
+    "market": {
+      "source": "V9 persisted raw L2 events",
+      "symbol": "BTCUSDC",
+      "venue": "Binance PUBLIC Spot"
+    },
+    "prospective_cutoff_utc": "2026-08-25T19:45:00Z",
+    "readiness_gate": {
+      "all_sessions_pass_integrity": true,
+      "minimum_eligible_closed_sessions": 8,
+      "minimum_total_eligible_hours": 20,
+      "minimum_utc_dates": 2
+    },
+    "restrictions": {
+      "additional_features": false,
+      "blind_holdout": {
+        "consumed": false,
+        "evaluated": false,
+        "loaded": false,
+        "revealed": false,
+        "status": "LOCKED"
+      },
+      "real_predictive_evaluation_during_preregistration": false,
+      "threshold_search": false
+    },
+    "sampling": {
+      "causality": "feature_source_timestamp <= sample_timestamp",
+      "frequency": "1s",
+      "missing_values": "preserved; train-fold-only median preprocessing",
+      "partial_buckets": "explicit and retained only when required values are valid",
+      "timestamp": "exact UTC one-second bucket close"
+    },
+    "schema_version": 1,
+    "session_policy": {
+      "active_sessions": "REJECT",
+      "cutoff_straddling_sessions": "REJECT",
+      "engineering_only": "session_start < prospective_cutoff",
+      "required_integrity": {
+        "crossed_or_invalid_book_states": 0,
+        "deterministic_hashes": "VERIFIED",
+        "deterministic_replay": "PASS",
+        "feature_reconstruction": "PASS",
+        "invalid_events": 0,
+        "sequence_gaps": 0
+      },
+      "required_state": "CLOSED_IMMUTABLE",
+      "research_eligible": "session_start >= prospective_cutoff"
+    },
+    "targets": {
+      "alignment": "exact timestamps only; no fill or interpolation",
+      "definition": "log(mid_price[T+h] / mid_price[T])",
+      "primary_horizon_seconds": 30,
+      "secondary_descriptive_horizons_seconds": [
+        1,
+        5,
+        60
+      ]
+    }
+  },
+  "run_id": "e1cc53ee9f55cb9e"
+}
