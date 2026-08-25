@@ -29,13 +29,14 @@ def decimal_value(name: str, value: object, *, non_negative: bool = False) -> De
 def utc_timestamp(value: object, *, unit: str) -> datetime:
     """Normalize one explicitly identified source timestamp to UTC."""
 
-    if unit == "milliseconds":
+    if unit in {"milliseconds", "microseconds"}:
         if isinstance(value, bool) or not str(value).lstrip("-").isdigit():
-            raise ValueError("Millisecond timestamp must be an integer.")
+            raise ValueError("Kline timestamp must be an integer.")
         raw = int(str(value))
-        if raw < 946_684_800_000 or raw > 4_102_444_800_000:
-            raise ValueError("Millisecond timestamp is impossible.")
-        result = datetime.fromtimestamp(raw / 1000, tz=timezone.utc)
+        divisor = 1_000 if unit == "milliseconds" else 1_000_000
+        if raw < 946_684_800 * divisor or raw > 4_102_444_800 * divisor:
+            raise ValueError("Kline timestamp is impossible.")
+        result = datetime.fromtimestamp(raw / divisor, tz=timezone.utc)
     elif unit == "iso8601":
         text = str(value).strip()
         if len(text) == 10:
@@ -51,7 +52,7 @@ def utc_timestamp(value: object, *, unit: str) -> datetime:
             result = result.replace(tzinfo=timezone.utc)
         result = result.astimezone(timezone.utc)
     else:
-        raise ValueError("Timestamp unit must be explicit: milliseconds or iso8601.")
+        raise ValueError("Timestamp unit must be explicit: milliseconds, microseconds, or iso8601.")
     return result
 
 

@@ -38,7 +38,11 @@ def _archive_rows(path: str | Path) -> tuple[tuple[str, ...], ...]:
 
 
 def _timestamp(value: str, *, preferred_unit: str) -> object:
-    unit = "milliseconds" if value.lstrip("-").isdigit() else preferred_unit
+    unit = (
+        ("microseconds" if len(value.lstrip("-")) > 13 else "milliseconds")
+        if value.lstrip("-").isdigit()
+        else preferred_unit
+    )
     return utc_timestamp(value, unit=unit)
 
 
@@ -138,4 +142,3 @@ def parse_price_kline_archive(
 def exact_records_duplicated(records: Iterable[object]) -> int:
     values = tuple(records)
     return len(values) - len(set(values))
-
