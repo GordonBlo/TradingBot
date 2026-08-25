@@ -17,6 +17,7 @@ from src.models.market_data_source import MarketDataSource
 from src.utils.logger import get_logger
 
 CandleHandler = Callable[[Candle], Awaitable[None] | None]
+ConnectionHandler = Callable[[bool], Awaitable[None] | None]
 
 
 class MarketStream:
@@ -30,11 +31,14 @@ class MarketStream:
         interval: str,
         *,
         reconnect_delay_seconds: float = 2.0,
+        connect_factory: Callable[..., Any] = connect,
     ) -> None:
         self.symbol = symbol.upper()
         self.interval = interval
         self.reconnect_delay_seconds = reconnect_delay_seconds
+        self._connect_factory = connect_factory
         self._handlers: list[CandleHandler] = []
+        self._connection_handlers: list[ConnectionHandler] = []
         self._logger = get_logger(__name__)
 
     @property
@@ -54,6 +58,19 @@ class MarketStream:
         def unsubscribe() -> None:
             if handler in self._handlers:
                 self._handlers.remove(handler)
+
+        return unsubscribe
+
+    def subscribe_connection(
+        self, handler: ConnectionHandler
+    ) -> Callable[[], None]:
+        """Register a public-stream connection lifecycle consumer."""
+
+        self._connection_handlers.append(handler)
+
+        def unsubscribe() -> None:
+            if handler in self._connection_handlers:
+                self._connection_handlers.remove(handler)
 
         return unsubscribe
 
@@ -96,6 +113,18 @@ class MarketStream:
                     type(exc).__name__,
                 )
 
+    async def _publish_connection(self, connected: bool) -> None:
+        for handler in tuple(self._connection_handlers):
+            try:
+                result = handler(connected)
+                if inspect.isawaitable(result):
+                    await result
+            except Exception as exc:
+                self._logger.error(
+                    "Connection lifecycle consumer failed (%s); stream will continue",
+                    type(exc).__name__,
+                )
+
     def _log_candle(self, candle: Candle) -> None:
         log_method = self._logger.info if candle.is_closed else self._logger.debug
         state = "closed" if candle.is_closed else "partial update"
@@ -127,8 +156,9 @@ class MarketStream:
 
         stop_event = stop_event or asyncio.Event()
         while not stop_event.is_set():
+            connected = False
             try:
-                async with connect(
+                async with self._connect_factory(
                     self.stream_url,
                     open_timeout=10,
                     close_timeout=5,
@@ -136,6 +166,8 @@ class MarketStream:
                     ping_timeout=20,
                     max_queue=32,
                 ) as websocket:
+                    connected = True
+                    await self._publish_connection(True)
                     self._logger.info(
                         "Connected to Binance PUBLIC WebSocket for %s %s candles",
                         self.symbol,
@@ -166,9 +198,15 @@ class MarketStream:
             except Exception as exc:
                 if stop_event.is_set():
                     break
+                if connected:
+                    await self._publish_connection(False)
+                    connected = False
                 self._logger.warning(
                     "Binance WebSocket disconnected (%s); reconnecting in %.1f seconds",
                     type(exc).__name__,
                     self.reconnect_delay_seconds,
                 )
                 await self._wait_for_reconnect(stop_event)
+            finally:
+                if connected:
+                    await self._publish_connection(False)
