@@ -154,6 +154,40 @@ class PublicMarketDataClient:
             )
         return data
 
+    def get_order_book_snapshot(
+        self, symbol: str = "BTCUSDC", *, limit: int = 1_000
+    ) -> dict[str, Any]:
+        """Return one unauthenticated public Spot depth snapshot."""
+
+        requested_symbol = symbol.strip().upper()
+        if requested_symbol != "BTCUSDC":
+            raise ValueError("V9 order-book snapshots support BTCUSDC only.")
+        if limit not in (100, 500, 1_000, 5_000):
+            raise ValueError("Binance depth limit must be 100, 500, 1000, or 5000.")
+        response = self._request(
+            "order book depth",
+            lambda: self._rest_api.depth(requested_symbol, limit=limit),
+        )
+        data = to_plain_value(response.data())
+        last_update_id = field(data, "lastUpdateId", "last_update_id")
+        bids = field(data, "bids")
+        asks = field(data, "asks")
+        if (
+            last_update_id is None
+            or not isinstance(bids, Sequence)
+            or isinstance(bids, (str, bytes, bytearray))
+            or not isinstance(asks, Sequence)
+            or isinstance(asks, (str, bytes, bytearray))
+        ):
+            raise PublicMarketDataError(
+                "Public Binance order-book snapshot was malformed."
+            )
+        return {
+            "lastUpdateId": int(last_update_id),
+            "bids": [list(level) for level in bids],
+            "asks": [list(level) for level in asks],
+        }
+
     def get_klines(
         self,
         symbol: str,
