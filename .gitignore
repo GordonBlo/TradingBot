@@ -28,3 +28,11 @@ reports/
 data/derivatives/
 
 data/
+
+# Secrets / private keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
