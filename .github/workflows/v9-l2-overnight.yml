@@ -1,0 +1,322 @@
+name: V9 L2 overnight prospective collection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v9-l2-overnight-prospective-collection
+  cancel-in-progress: false
+
+jobs:
+  session_1:
+    name: Prospective session 1 of 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "1"
+    outputs: &session_outputs
+      status: ${{ steps.result.outputs.status }}
+      session_id: ${{ steps.result.outputs.session_id }}
+      eligible_hours: ${{ steps.result.outputs.eligible_hours }}
+      eligible_utc_dates: ${{ steps.result.outputs.eligible_utc_dates }}
+      artifact_name: ${{ steps.result.outputs.artifact_name }}
+    steps: &session_steps
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        id: setup_python
+        continue-on-error: true
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        id: dependencies
+        if: steps.setup_python.outcome == 'success'
+        continue-on-error: true
+        run: python -m pip install -r requirements.txt
+
+      - name: Verify frozen V9 V2 preregistration and cutoff
+        id: preflight
+        if: steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          python -m src.cli.validate_v9_l2_collection preflight
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Collect public BTCUSDC Spot L2 data for exactly 10800 seconds
+        id: collect
+        if: steps.preflight.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python -m src.cli.record_v9_orderbook \
+            --duration-seconds 10800 \
+            --output-root data/orderbook/v9 \
+            --snapshot-limit 5000 \
+            --max-levels 5000
+
+      - name: Identify the single raw session
+        id: identify
+        if: always()
+        continue-on-error: true
+        run: >-
+          python -m src.cli.validate_v9_l2_collection identify
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Build V9 L2 features and deterministic replay
+        id: features
+        if: >-
+          steps.collect.outcome == 'success' &&
+          steps.identify.outcome == 'success' &&
+          steps.identify.outputs.summary_exists == 'true'
+        continue-on-error: true
+        env:
+          RAW_PATH: ${{ steps.identify.outputs.raw_path }}
+        run: |
+          python -m src.cli.build_v9_l2_features \
+            --raw "$RAW_PATH" \
+            --output-root data/orderbook/v9/features \
+            --max-levels 5000
+
+      - name: Enforce frozen V9 V2 integrity, hashes, and provenance
+        id: validate
+        if: steps.features.outcome == 'success'
+        continue-on-error: true
+        env:
+          RAW_PATH: ${{ steps.identify.outputs.raw_path }}
+          SUMMARY_PATH: ${{ steps.identify.outputs.summary_path }}
+          SESSION_ID: ${{ steps.identify.outputs.session_id }}
+        run: |
+          python -m src.cli.validate_v9_l2_collection validate \
+            --raw "$RAW_PATH" \
+            --summary "$SUMMARY_PATH" \
+            --duration-seconds 10800 \
+            --result "data/orderbook/v9/validation/${SESSION_ID}.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Finalize immutable session validation metadata
+        id: finalize
+        if: always()
+        env:
+          IDENTIFIED_SESSION_ID: ${{ steps.identify.outputs.session_id }}
+          SETUP_OUTCOME: ${{ steps.setup_python.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
+          PREFLIGHT_OUTCOME: ${{ steps.preflight.outcome }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          IDENTIFY_OUTCOME: ${{ steps.identify.outcome }}
+          FEATURES_OUTCOME: ${{ steps.features.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          session_id="$IDENTIFIED_SESSION_ID"
+          if [[ -z "$session_id" ]]; then
+            session_id="NOT_CREATED"
+          fi
+          artifact_name="v9-l2-overnight-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}-${session_id}"
+          result_path="data/orderbook/v9/validation/${session_id}.json"
+          python -m src.cli.validate_v9_l2_collection finalize \
+            --session-number "$SESSION_NUMBER" \
+            --session-id "$session_id" \
+            --result "$result_path" \
+            --artifact-name "$artifact_name" \
+            --required-outcome "setup_python=$SETUP_OUTCOME" \
+            --required-outcome "dependencies=$DEPENDENCIES_OUTCOME" \
+            --required-outcome "preflight=$PREFLIGHT_OUTCOME" \
+            --required-outcome "collect=$COLLECT_OUTCOME" \
+            --required-outcome "identify=$IDENTIFY_OUTCOME" \
+            --required-outcome "features=$FEATURES_OUTCOME" \
+            --required-outcome "validate=$VALIDATE_OUTCOME" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload this session only
+        id: upload
+        if: always() && steps.finalize.outputs.has_session == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.finalize.outputs.artifact_name }}
+          path: data/orderbook/v9
+          retention-days: 3
+          if-no-files-found: error
+
+      - name: Publish session result
+        id: result
+        if: always()
+        env:
+          PREUPLOAD_STATUS: ${{ steps.finalize.outputs.status }}
+          SESSION_ID: ${{ steps.finalize.outputs.session_id }}
+          ELIGIBLE_HOURS: ${{ steps.finalize.outputs.eligible_hours }}
+          ELIGIBLE_UTC_DATES: ${{ steps.finalize.outputs.eligible_utc_dates }}
+          ARTIFACT_NAME: ${{ steps.finalize.outputs.artifact_name }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="FAIL"
+          eligible_hours="0"
+          eligible_utc_dates="[]"
+          if [[ "$PREUPLOAD_STATUS" == "PASS" && "$UPLOAD_OUTCOME" == "success" ]]; then
+            status="PASS"
+            eligible_hours="$ELIGIBLE_HOURS"
+            eligible_utc_dates="$ELIGIBLE_UTC_DATES"
+          fi
+          session_id="${SESSION_ID:-NOT_CREATED}"
+          artifact_name="${ARTIFACT_NAME:-NOT_CREATED}"
+          printf 'status=%s\n' "$status" >> "$GITHUB_OUTPUT"
+          printf 'session_id=%s\n' "$session_id" >> "$GITHUB_OUTPUT"
+          printf 'eligible_hours=%s\n' "$eligible_hours" >> "$GITHUB_OUTPUT"
+          printf 'eligible_utc_dates=%s\n' "$eligible_utc_dates" >> "$GITHUB_OUTPUT"
+          printf 'artifact_name=%s\n' "$artifact_name" >> "$GITHUB_OUTPUT"
+          {
+            printf '### Session %s: %s\n\n' "$SESSION_NUMBER" "$status"
+            printf -- '- Session ID: `%s`\n' "$session_id"
+            printf -- '- Eligible hours: `%s`\n' "$eligible_hours"
+            printf -- '- Eligible UTC start dates: `%s`\n' "$eligible_utc_dates"
+            printf -- '- Artifact: `%s`\n' "$artifact_name"
+            printf -- '- Predictive outcomes evaluated: `false`\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail an unsuccessful session
+        if: always() && steps.result.outputs.status != 'PASS'
+        run: |
+          echo "Session ${SESSION_NUMBER} failed collection, validation, or artifact upload."
+          exit 1
+
+  session_2:
+    name: Prospective session 2 of 4
+    needs: session_1
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "2"
+    outputs: *session_outputs
+    steps: *session_steps
+
+  session_3:
+    name: Prospective session 3 of 4
+    needs: session_2
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "3"
+    outputs: *session_outputs
+    steps: *session_steps
+
+  session_4:
+    name: Prospective session 4 of 4
+    needs: session_3
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "4"
+    outputs: *session_outputs
+    steps: *session_steps
+
+  summary:
+    name: Overnight collection summary
+    needs: [session_1, session_2, session_3, session_4]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      S1_JOB_RESULT: ${{ needs.session_1.result }}
+      S1_STATUS: ${{ needs.session_1.outputs.status }}
+      S1_SESSION_ID: ${{ needs.session_1.outputs.session_id }}
+      S1_ELIGIBLE_HOURS: ${{ needs.session_1.outputs.eligible_hours }}
+      S1_UTC_DATES: ${{ needs.session_1.outputs.eligible_utc_dates }}
+      S1_ARTIFACT: ${{ needs.session_1.outputs.artifact_name }}
+      S2_JOB_RESULT: ${{ needs.session_2.result }}
+      S2_STATUS: ${{ needs.session_2.outputs.status }}
+      S2_SESSION_ID: ${{ needs.session_2.outputs.session_id }}
+      S2_ELIGIBLE_HOURS: ${{ needs.session_2.outputs.eligible_hours }}
+      S2_UTC_DATES: ${{ needs.session_2.outputs.eligible_utc_dates }}
+      S2_ARTIFACT: ${{ needs.session_2.outputs.artifact_name }}
+      S3_JOB_RESULT: ${{ needs.session_3.result }}
+      S3_STATUS: ${{ needs.session_3.outputs.status }}
+      S3_SESSION_ID: ${{ needs.session_3.outputs.session_id }}
+      S3_ELIGIBLE_HOURS: ${{ needs.session_3.outputs.eligible_hours }}
+      S3_UTC_DATES: ${{ needs.session_3.outputs.eligible_utc_dates }}
+      S3_ARTIFACT: ${{ needs.session_3.outputs.artifact_name }}
+      S4_JOB_RESULT: ${{ needs.session_4.result }}
+      S4_STATUS: ${{ needs.session_4.outputs.status }}
+      S4_SESSION_ID: ${{ needs.session_4.outputs.session_id }}
+      S4_ELIGIBLE_HOURS: ${{ needs.session_4.outputs.eligible_hours }}
+      S4_UTC_DATES: ${{ needs.session_4.outputs.eligible_utc_dates }}
+      S4_ARTIFACT: ${{ needs.session_4.outputs.artifact_name }}
+    steps:
+      - name: Publish PASS/FAIL summary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from decimal import Decimal, InvalidOperation
+          from pathlib import Path
+
+          rows = []
+          total_hours = Decimal("0")
+          represented_dates = set()
+          for number in range(1, 5):
+              prefix = f"S{number}_"
+              passed = (
+                  os.environ.get(prefix + "JOB_RESULT") == "success"
+                  and os.environ.get(prefix + "STATUS") == "PASS"
+              )
+              status = "PASS" if passed else "FAIL"
+              session_id = os.environ.get(prefix + "SESSION_ID") or "NOT_CREATED"
+              artifact = os.environ.get(prefix + "ARTIFACT") or "NOT_CREATED"
+              hours = Decimal("0")
+              dates = []
+              if passed:
+                  try:
+                      hours = Decimal(os.environ.get(prefix + "ELIGIBLE_HOURS") or "0")
+                      parsed_dates = json.loads(os.environ.get(prefix + "UTC_DATES") or "[]")
+                      if not isinstance(parsed_dates, list):
+                          raise ValueError("UTC dates output is not a list")
+                      dates = sorted(str(value) for value in parsed_dates)
+                  except (InvalidOperation, json.JSONDecodeError, ValueError):
+                      status = "FAIL"
+                      passed = False
+                      hours = Decimal("0")
+                      dates = []
+              if passed:
+                  total_hours += hours
+                  represented_dates.update(dates)
+              rows.append((number, status, session_id, hours, dates, artifact))
+
+          lines = [
+              "## V9 L2 overnight prospective collection",
+              "",
+              "| Session | Status | Session ID | Eligible hours | UTC start date(s) | Artifact |",
+              "| ---: | :---: | --- | ---: | --- | --- |",
+          ]
+          for number, status, session_id, hours, dates, artifact in rows:
+              lines.append(
+                  f"| {number} | {status} | `{session_id}` | {hours} | "
+                  f"{', '.join(dates) or '—'} | `{artifact}` |"
+              )
+          lines.extend(
+              [
+                  "",
+                  f"- Eligible hours collected: `{total_hours}`",
+                  "- Eligible UTC start dates represented: "
+                  + (", ".join(sorted(represented_dates)) or "none"),
+                  "- Predictive outcomes evaluated: `false`",
+                  "- Blind holdout accessed: `false`",
+              ]
+          )
+          rendered = "\n".join(lines) + "\n"
+          print(rendered)
+          Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(rendered, encoding="utf-8")
+          if any(status != "PASS" for _, status, *_ in rows):
+              raise SystemExit(1)
+          PY
