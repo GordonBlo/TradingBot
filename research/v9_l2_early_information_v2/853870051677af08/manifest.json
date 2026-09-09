@@ -1,0 +1,149 @@
+{
+  "definition": {
+    "amendment_reason": "Pre-outcome forensic audit found that row-level target permutation did not preserve overlapping-target temporal dependence and identified boundary, provenance, all-missing-fold, and artifact-binding integrity gaps.",
+    "artifact_binding": {
+      "canonical_sample_order": "sample_timestamp_utc within session",
+      "canonical_session_order": "session_start_utc then session_id",
+      "hash_mismatch": "INTEGRITY_FAILURE",
+      "identities": [
+        "raw_l2_session_sha256",
+        "closure_summary_sha256",
+        "features_1s_sha256"
+      ],
+      "required": true,
+      "session_identity_mismatch": "INTEGRITY_FAILURE",
+      "verification_time": "readiness scan and diagnostic input load"
+    },
+    "classification": {
+      "NO_STABLE_L2_INFORMATION": "none of the stable gates has positive evidence",
+      "STABLE_L2_INFORMATION": {
+        "aggregate_primary_spearman": "> 0",
+        "all_required": true,
+        "model_mse": "< constant_training_baseline_mse",
+        "permutation_p": "< 0.05",
+        "positive_direction_session_fraction": ">= 0.70"
+      },
+      "WEAK_OR_UNSTABLE_L2_INFORMATION": "at least one stable gate has positive evidence, but not all gates pass"
+    },
+    "created_at_utc": "2026-09-09T17:28:40.238471Z",
+    "evaluation": {
+      "all_missing_training_feature": "INTEGRITY_FAILURE",
+      "baseline": "constant training-target mean",
+      "folds": "chronological expanding whole-session-blocked out-of-sample",
+      "input_imputation": "training-fold median only",
+      "model": "Ridge",
+      "null": {
+        "breaks": "contemporaneous feature/target alignment",
+        "excluded_circular_distance_from_zero_samples": {
+          "endpoints_included": true,
+          "maximum": 60,
+          "minimum": -60
+        },
+        "full_fold_model_refit": true,
+        "method": "session-wise circular primary-target shifts",
+        "minimum_session_samples": 122,
+        "offsets_independent_by_session": true,
+        "operation": "rotate the complete ordered target sequence by one offset per session",
+        "preserves": "within-session target order and temporal dependence except one circular boundary",
+        "sample_order_within_session": "UTC sample timestamp ascending",
+        "sampling_seconds": 1,
+        "session_order": "session_start_utc then session_id",
+        "valid_offset_rule": "min(offset, session_sample_count-offset) > 60"
+      },
+      "p_value": "(1 + count(null_stat >= observed_stat)) / (1 + 1000)",
+      "permutation_seed": 20260825,
+      "permutation_tail": "one-sided positive held-out Spearman",
+      "permutations": 1000,
+      "preprocessing": "fit on training sessions only",
+      "primary_metric": "pooled held-out Spearman correlation",
+      "required_valid_null_statistics": 1000,
+      "ridge_alpha": 1.0,
+      "significance_alpha": 0.05,
+      "undefined_required_null_statistic": "INTEGRITY_FAILURE_NO_DROPPING"
+    },
+    "experiment": "V9_EARLY_INFORMATION_DIAGNOSTIC",
+    "features": [
+      "spread_bps",
+      "microprice_minus_mid_bps",
+      "depth_imbalance_1",
+      "depth_imbalance_5",
+      "depth_imbalance_10",
+      "depth_imbalance_20",
+      "bid_depth_top_20",
+      "ask_depth_top_20",
+      "bid_depth_concentration",
+      "ask_depth_concentration",
+      "bid_depth_added",
+      "bid_depth_removed",
+      "ask_depth_added",
+      "ask_depth_removed",
+      "update_intensity"
+    ],
+    "market": {
+      "source": "V9 persisted raw L2 events",
+      "symbol": "BTCUSDC",
+      "venue": "Binance PUBLIC Spot"
+    },
+    "prospective_cutoff_utc": "2026-09-09T17:30:00Z",
+    "protocol_version": "V9_L2_EARLY_INFORMATION_DIAGNOSTIC_V2",
+    "readiness_gate": {
+      "all_sessions_pass_integrity": true,
+      "minimum_eligible_closed_sessions": 8,
+      "minimum_total_eligible_hours": 20,
+      "minimum_utc_dates": 2
+    },
+    "restrictions": {
+      "additional_features": false,
+      "blind_holdout": {
+        "consumed": false,
+        "evaluated": false,
+        "loaded": false,
+        "revealed": false,
+        "status": "LOCKED"
+      },
+      "real_predictive_evaluation_during_preregistration": false,
+      "threshold_search": false
+    },
+    "sampling": {
+      "all_missing_training_feature": "FAIL_FOLD_AND_DIAGNOSTIC",
+      "causality": "source_available_at <= sample_timestamp",
+      "frequency": "1s",
+      "missing_values": "preserved; train-fold-only median preprocessing",
+      "partial_buckets": "explicit and retained only when required values are valid",
+      "provenance": "required for every non-missing frozen feature value and both primary target mid-price endpoints; missing provenance is an integrity failure",
+      "timestamp": "exact UTC one-second bucket close"
+    },
+    "schema_version": 2,
+    "session_policy": {
+      "active_sessions": "REJECT",
+      "cross_session_targets": "FORBIDDEN",
+      "cutoff_straddling_sessions": "REJECT",
+      "engineering_only": "session_start < prospective_cutoff",
+      "required_integrity": {
+        "crossed_or_invalid_book_states": 0,
+        "deterministic_hashes": "VERIFIED",
+        "deterministic_replay": "PASS",
+        "feature_reconstruction": "PASS",
+        "invalid_events": 0,
+        "sequence_gaps": 0
+      },
+      "required_state": "CLOSED_IMMUTABLE",
+      "research_eligible": "session_start >= prospective_cutoff",
+      "target_boundary": "sample_timestamp >= authoritative_session_start and primary_target_timestamp <= authoritative_session_end"
+    },
+    "supersedes_run_id": "e1cc53ee9f55cb9e",
+    "targets": {
+      "alignment": "exact timestamps only; no fill or interpolation",
+      "authoritative_boundary_rule": "T >= session_start and T+30s <= session_end for the same CLOSED session",
+      "definition": "log(mid_price[T+h] / mid_price[T])",
+      "primary_horizon_seconds": 30,
+      "secondary_descriptive_horizons_seconds": [
+        1,
+        5,
+        60
+      ],
+      "secondary_horizons_influence_primary_classification": false
+    }
+  },
+  "run_id": "853870051677af08"
+}
