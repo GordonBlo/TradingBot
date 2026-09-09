@@ -5,12 +5,15 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from src.research.v9_l2_early_information_preregistration import write_or_verify_manifest
+from src.research.v9_l2_early_information_preregistration_v2 import (
+    PROTOCOL_VERSION,
+    write_or_verify_manifest,
+)
 from src.research.v9_l2_readiness import scan_session_readiness
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="V9 L2 diagnostic PLAN/READINESS guard")
+    parser = argparse.ArgumentParser(description="V9 L2 V2 diagnostic PLAN/READINESS guard")
     parser.add_argument(
         "--mode",
         choices=("PLAN", "READINESS", "EVALUATE"),
@@ -33,6 +36,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         feature_root=args.feature_root,
     )
     print(f"Preregistration ID: {manifest['run_id']}")
+    print(f"Protocol: {PROTOCOL_VERSION}")
+    print(f"Supersedes: {manifest['definition']['supersedes_run_id']}")
     print(f"Prospective cutoff: {readiness.cutoff_utc}")
     print(f"Manifest: {path}")
     print(json.dumps(readiness.to_dict(), indent=2, sort_keys=True))

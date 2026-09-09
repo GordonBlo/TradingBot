@@ -9,6 +9,17 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class SessionArtifactBinding:
+    session_id: str
+    raw_event_log: str
+    raw_sha256: str
+    closure_summary: str
+    closure_summary_sha256: str
+    features_1s: str
+    features_1s_sha256: str
+
+
+@dataclass(frozen=True)
 class SessionEligibility:
     session_id: str
     started_at_utc: str
@@ -17,6 +28,7 @@ class SessionEligibility:
     classification: str
     integrity_passed: bool
     reason: str
+    artifact_binding: SessionArtifactBinding | None = None
 
 
 @dataclass(frozen=True)
@@ -63,24 +75,25 @@ def _resolved_path(value: str | Path, workspace: Path) -> Path:
 
 def _session_integrity(
     summary: dict[str, Any],
+    summary_path: Path,
     feature_report: Path,
     workspace: Path,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, SessionArtifactBinding | None]:
     if summary.get("collector_left_running") is not False:
-        return False, "session is not CLOSED"
+        return False, "session is not CLOSED", None
     if summary.get("validation_status") != "PASSED":
-        return False, "recorder validation did not pass"
+        return False, "recorder validation did not pass", None
     counters = summary.get("integrity", {})
     for key in ("sequence_gaps", "invalid_events", "crossed_invalid_book_states"):
         if int(counters.get(key, -1)) != 0:
-            return False, f"nonzero recorder integrity counter: {key}"
+            return False, f"nonzero recorder integrity counter: {key}", None
     if not feature_report.is_file():
-        return False, "feature reconstruction report missing"
+        return False, "feature reconstruction report missing", None
 
     report = json.loads(feature_report.read_text(encoding="utf-8"))
     deterministic = report.get("deterministic_replay_hash_check", {})
     if deterministic.get("passed") is not True:
-        return False, "deterministic feature replay failed"
+        return False, "deterministic feature replay failed", None
     feature_counters = report.get("counters", {})
     for key in (
         "sequence_gap_count",
@@ -89,23 +102,56 @@ def _session_integrity(
         "unreconstructed_event_count",
     ):
         if int(feature_counters.get(key, -1)) != 0:
-            return False, f"nonzero feature integrity counter: {key}"
+            return False, f"nonzero feature integrity counter: {key}", None
 
     raw_path = _resolved_path(summary["raw_event_log"], workspace)
     if not raw_path.is_file():
-        return False, "raw event log missing"
+        return False, "raw event log missing", None
+    session_id = str(summary["session_id"])
+    if (
+        summary_path.name != f"{session_id}.summary.json"
+        or raw_path.stem != session_id
+        or feature_report.parent.name != session_id
+    ):
+        return False, "session artifact identity mismatch", None
     raw_hash = _sha256(raw_path)
     if report.get("raw_sha256") != raw_hash:
-        return False, "raw event checksum mismatch"
+        return False, "raw event checksum mismatch", None
+    report_raw_path = _resolved_path(str(report.get("raw_path")), workspace)
+    report_output_dir = _resolved_path(str(report.get("output_dir")), workspace)
+    if (
+        report_raw_path.resolve() != raw_path.resolve()
+        or report_output_dir.resolve() != feature_report.parent.resolve()
+    ):
+        return False, "feature report session identity mismatch", None
     files = report.get("files", {})
     file_hashes = report.get("file_sha256", {})
     for name, value in files.items():
         output_path = _resolved_path(value, workspace)
         if not output_path.is_file() or _sha256(output_path) != file_hashes.get(name):
-            return False, "derived feature checksum mismatch"
+            return False, "derived feature checksum mismatch", None
     if set(files) != {"event_features", "features_1s", "features_15m"}:
-        return False, "deterministic feature hashes incomplete"
-    return True, "all recorder/replay/feature integrity checks passed"
+        return False, "deterministic feature hashes incomplete", None
+    expected_feature_paths = {
+        "event_features": feature_report.parent / "event_features.csv",
+        "features_1s": feature_report.parent / "features_1s.csv",
+        "features_15m": feature_report.parent / "features_15m.csv",
+    }
+    if any(
+        _resolved_path(files[name], workspace).resolve() != expected.resolve()
+        for name, expected in expected_feature_paths.items()
+    ):
+        return False, "derived feature session identity mismatch", None
+    binding = SessionArtifactBinding(
+        session_id=str(summary["session_id"]),
+        raw_event_log=str(raw_path),
+        raw_sha256=raw_hash,
+        closure_summary=str(summary_path),
+        closure_summary_sha256=_sha256(summary_path),
+        features_1s=str(_resolved_path(files["features_1s"], workspace)),
+        features_1s_sha256=str(file_hashes["features_1s"]),
+    )
+    return True, "all recorder/replay/feature integrity checks passed", binding
 
 
 def scan_session_readiness(
@@ -128,6 +174,7 @@ def scan_session_readiness(
         ended = _parse_utc(ended_text) if ended_text else None
         duration_hours = 0.0 if ended is None else max(0.0, (ended - started).total_seconds() / 3600)
 
+        binding: SessionArtifactBinding | None = None
         if ended is None or summary.get("collector_left_running") is not False:
             classification, passed, reason = "ACTIVE", False, "session is active or incomplete"
         elif started < cutoff < ended:
@@ -136,7 +183,9 @@ def scan_session_readiness(
             classification, passed, reason = "ENGINEERING_ONLY", False, "session started before cutoff"
         else:
             report_path = feature_root / session_id / "validation_report.json"
-            passed, reason = _session_integrity(summary, report_path, workspace)
+            passed, reason, binding = _session_integrity(
+                summary, summary_path, report_path, workspace
+            )
             classification = "ELIGIBLE" if passed else "INTEGRITY_FAILED"
         sessions.append(
             SessionEligibility(
@@ -147,12 +196,15 @@ def scan_session_readiness(
                 classification=classification,
                 integrity_passed=passed,
                 reason=reason,
+                artifact_binding=binding,
             )
         )
 
+    sessions.sort(key=lambda session: (_parse_utc(session.started_at_utc), session.session_id))
+
     eligible = [session for session in sessions if session.classification == "ELIGIBLE"]
     hours = sum(session.duration_hours for session in eligible)
-    dates = {session.started_at_utc[:10] for session in eligible}
+    dates = {_parse_utc(session.started_at_utc).date().isoformat() for session in eligible}
     reasons: list[str] = []
     gate = definition["readiness_gate"]
     if len(eligible) < int(gate["minimum_eligible_closed_sessions"]):

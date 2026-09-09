@@ -5,7 +5,13 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from src.research.v9_l2_early_information_preregistration import build_manifest
+import pytest
+
+from src.diagnostics.v9_l2_early_information import (
+    DiagnosticIntegrityError,
+    load_bound_session_samples,
+)
+from src.research.v9_l2_early_information_preregistration_v2 import build_manifest
 from src.research.v9_l2_readiness import scan_session_readiness
 
 
@@ -52,6 +58,8 @@ def _write_session(
         files[name] = str(output.relative_to(root.parent))
         hashes[name] = _sha(output)
     report = {
+        "raw_path": str(raw.relative_to(root.parent)),
+        "output_dir": str(output_dir.relative_to(root.parent)),
         "raw_sha256": _sha(raw),
         "deterministic_replay_hash_check": {"passed": True},
         "counters": {
@@ -93,6 +101,7 @@ def test_readiness_requires_eight_closed_sessions_twenty_hours_and_two_dates(tmp
     assert report.eligible_closed_sessions == 8
     assert report.eligible_hours == 20
     assert report.eligible_utc_dates == 2
+    assert all(session.artifact_binding is not None for session in report.sessions)
 
 
 def test_pre_cutoff_is_engineering_and_straddling_or_failed_sessions_block(tmp_path) -> None:
@@ -133,3 +142,26 @@ def test_pre_cutoff_is_engineering_and_straddling_or_failed_sessions_block(tmp_p
     assert not report.ready
     assert report.straddling_sessions == 1
     assert report.integrity_failed_sessions == 1
+
+
+def test_diagnostic_rejects_artifact_changed_after_readiness(tmp_path) -> None:
+    manifest = build_manifest(datetime(2026, 1, 1, 0, 1, tzinfo=UTC))
+    data_root = tmp_path / "data"
+    feature_root = tmp_path / "features"
+    _write_session(
+        data_root,
+        feature_root,
+        session_id="BOUND",
+        start=datetime(2026, 1, 1, 1, 0, tzinfo=UTC),
+        hours=3,
+    )
+    report = scan_session_readiness(
+        manifest, data_root=data_root, feature_root=feature_root, workspace=tmp_path
+    )
+    session = report.sessions[0]
+    assert session.classification == "ELIGIBLE"
+    (feature_root / "BOUND" / "features_1s.csv").write_text(
+        "changed after readiness\n", encoding="utf-8"
+    )
+    with pytest.raises(DiagnosticIntegrityError, match="features_1s artifact hash mismatch"):
+        load_bound_session_samples(session, workspace=tmp_path)
