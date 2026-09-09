@@ -1,0 +1,226 @@
+name: V9 L2 GitHub smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v9-l2-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Prepare isolated CI data root
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e data/orderbook/v9
+          test ! -e data/ci/v9_l2_smoke
+          mkdir -p data/ci/v9_l2_smoke
+
+      - name: Collect public BTCUSDC Spot L2 data for 120 seconds
+        run: |
+          python -m src.cli.record_v9_orderbook \
+            --duration-seconds 120 \
+            --output-root data/ci/v9_l2_smoke \
+            --snapshot-limit 5000 \
+            --max-levels 5000
+
+      - name: Locate the single closed raw session
+        id: session
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' raw_paths < <(
+            find data/ci/v9_l2_smoke -type f -name '*.jsonl' -print0 | sort -z
+          )
+          if [[ "${#raw_paths[@]}" -ne 1 ]]; then
+            printf 'Expected exactly one raw session, found %s\n' "${#raw_paths[@]}" >&2
+            exit 1
+          fi
+          raw_path="${raw_paths[0]}"
+          summary_path="${raw_path%.jsonl}.summary.json"
+          test -f "$summary_path"
+          printf 'raw_path=%s\n' "$raw_path" >> "$GITHUB_OUTPUT"
+          printf 'summary_path=%s\n' "$summary_path" >> "$GITHUB_OUTPUT"
+
+      - name: Reconstruct V9 L2 features and verify deterministic replay
+        run: |
+          python -m src.cli.build_v9_l2_features \
+            --raw "${{ steps.session.outputs.raw_path }}" \
+            --output-root data/ci/v9_l2_smoke/features \
+            --max-levels 5000
+
+      - name: Validate smoke integrity and isolation
+        env:
+          RAW_PATH: ${{ steps.session.outputs.raw_path }}
+          SUMMARY_PATH: ${{ steps.session.outputs.summary_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          from src.exchange.public_market_client import PublicMarketDataClient
+          from src.orderbook.recorder import V9DepthRecorder
+
+          ci_root = Path("data/ci/v9_l2_smoke").resolve()
+          raw_path = Path(os.environ["RAW_PATH"])
+          summary_path = Path(os.environ["SUMMARY_PATH"])
+          raw_resolved = raw_path.resolve()
+          summary_resolved = summary_path.resolve()
+
+          if not raw_resolved.is_relative_to(ci_root):
+              raise SystemExit(f"Raw session escaped CI root: {raw_path}")
+          if not summary_resolved.is_relative_to(ci_root):
+              raise SystemExit(f"Closure summary escaped CI root: {summary_path}")
+          if summary_path != raw_path.with_suffix(".summary.json"):
+              raise SystemExit("Closure summary does not match the raw session identity.")
+
+          raw_sessions = sorted(path.resolve() for path in ci_root.rglob("*.jsonl"))
+          if raw_sessions != [raw_resolved]:
+              raise SystemExit(f"Expected exactly one raw session, found: {raw_sessions}")
+
+          public_endpoints = {
+              "rest": PublicMarketDataClient.REST_BASE_URL,
+              "websocket": V9DepthRecorder.WEBSOCKET_URL,
+          }
+          if public_endpoints != {
+              "rest": "https://data-api.binance.vision",
+              "websocket": "wss://data-stream.binance.vision/ws/btcusdc@depth@100ms",
+          }:
+              raise SystemExit(f"Unexpected Binance endpoints: {public_endpoints}")
+
+          summary = json.loads(summary_path.read_text(encoding="utf-8"))
+          expected_collector_fields = {
+              "symbol": "BTCUSDC",
+              "source": "BINANCE_PUBLIC_SPOT",
+              "rest_snapshot": "PUBLIC_API_V3_DEPTH",
+              "websocket_stream": "BTCUSDC_DIFF_DEPTH_100MS",
+              "uses_authentication": False,
+              "orders_enabled": False,
+              "duration_seconds": 120,
+              "validation_status": "PASSED",
+              "collector_left_running": False,
+          }
+          for key, expected in expected_collector_fields.items():
+              if summary.get(key) != expected:
+                  raise SystemExit(
+                      f"Unexpected collector field {key}: {summary.get(key)!r} != {expected!r}"
+                  )
+          if summary.get("session_id") != raw_path.stem:
+              raise SystemExit("Collector summary session identity mismatch.")
+          if Path(summary.get("raw_event_log", "")) != raw_path:
+              raise SystemExit("Collector summary raw path mismatch.")
+
+          record_types = set()
+          with raw_path.open(encoding="utf-8") as raw_stream:
+              for expected_index, line in enumerate(raw_stream):
+                  record = json.loads(line)
+                  if record.get("schema_version") != "V9_DEPTH_RAW_1":
+                      raise SystemExit("Unexpected raw event schema.")
+                  if record.get("session_id") != raw_path.stem:
+                      raise SystemExit("Raw event session identity mismatch.")
+                  if record.get("record_index") != expected_index:
+                      raise SystemExit("Raw event index sequence mismatch.")
+                  record_types.add(record.get("record_type"))
+          if record_types != {"REST_SNAPSHOT", "DIFF_DEPTH"}:
+              raise SystemExit(f"Unexpected or incomplete raw record types: {record_types}")
+
+          collector_integrity = summary.get("integrity", {})
+          for key in (
+              "sequence_gaps",
+              "invalid_events",
+              "crossed_invalid_book_states",
+          ):
+              if collector_integrity.get(key) != 0:
+                  raise SystemExit(
+                      f"Collector integrity failure: {key}={collector_integrity.get(key)!r}"
+                  )
+
+          report_path = ci_root / "features" / raw_path.stem / "validation_report.json"
+          if not report_path.is_file():
+              raise SystemExit(f"Feature validation report missing: {report_path}")
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          deterministic = report.get("deterministic_replay_hash_check", {})
+          if deterministic.get("passed") is not True:
+              raise SystemExit("Deterministic replay hash check did not pass.")
+          primary_hash = deterministic.get("primary_file_sha256")
+          replay_hash = deterministic.get("replay_file_sha256")
+          if not primary_hash or primary_hash != replay_hash:
+              raise SystemExit("Deterministic replay hashes are absent or unequal.")
+
+          actual_raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+          if report.get("raw_sha256") != actual_raw_hash:
+              raise SystemExit("Feature report raw checksum mismatch.")
+          if Path(report.get("raw_path", "")).resolve() != raw_resolved:
+              raise SystemExit("Feature report raw path mismatch.")
+          expected_output_dir = ci_root / "features" / raw_path.stem
+          if Path(report.get("output_dir", "")).resolve() != expected_output_dir:
+              raise SystemExit("Feature report output directory mismatch.")
+
+          feature_counters = report.get("counters", {})
+          for key in (
+              "sequence_gap_count",
+              "invalid_event_count",
+              "crossed_book_state_count",
+              "unreconstructed_event_count",
+          ):
+              if feature_counters.get(key) != 0:
+                  raise SystemExit(
+                      f"Feature integrity failure: {key}={feature_counters.get(key)!r}"
+                  )
+
+          files = report.get("files", {})
+          if set(files) != {"event_features", "features_1s", "features_15m"}:
+              raise SystemExit(f"Unexpected feature file set: {sorted(files)}")
+          for name, value in files.items():
+              output_path = Path(value)
+              if not output_path.resolve().is_relative_to(ci_root) or not output_path.is_file():
+                  raise SystemExit(f"Invalid feature output {name}: {output_path}")
+              output_hash = hashlib.sha256(output_path.read_bytes()).hexdigest()
+              if report.get("file_sha256", {}).get(name) != output_hash:
+                  raise SystemExit(f"Feature checksum mismatch: {name}")
+
+          print("COLLECTOR INTEGRITY COUNTERS")
+          print(json.dumps(collector_integrity, indent=2, sort_keys=True))
+          print("FEATURE VALIDATION SUMMARY")
+          print(json.dumps({
+              "counters": feature_counters,
+              "deterministic_replay_hash_check": deterministic,
+              "public_data_only": {
+                  "endpoints": public_endpoints,
+                  "uses_authentication": summary["uses_authentication"],
+                  "orders_enabled": summary["orders_enabled"],
+                  "raw_record_types": sorted(record_types),
+              },
+              "raw_sha256_verified": True,
+          }, indent=2, sort_keys=True))
+          PY
+          test ! -e data/orderbook/v9
+
+      - name: Upload isolated smoke artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: v9-l2-github-smoke
+          path: data/ci/v9_l2_smoke
+          retention-days: 3
+          if-no-files-found: ignore
