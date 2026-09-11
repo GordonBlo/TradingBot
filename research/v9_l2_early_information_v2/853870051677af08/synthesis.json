@@ -1,0 +1,97 @@
+{
+  "artifact_type": "V9_L2_V2_IMMUTABLE_RESEARCH_SYNTHESIS",
+  "blind_holdout": {
+    "accessed": false,
+    "status": "LOCKED"
+  },
+  "created_at_utc": "2026-09-11T20:39:03.5291168Z",
+  "evidence_status": {
+    "eligible_session_count": 8,
+    "information_discovery_stage": "CLOSED",
+    "session_evidence": "CONSUMED"
+  },
+  "forensic_audit": {
+    "classification_impact": "UNCHANGED",
+    "limitations": [
+      {
+        "changes_frozen_classification": false,
+        "description": "Consecutive +30s targets overlap heavily. The frozen circular-shift null preserves within-session target order and dependence except at one circular boundary, but the nominal sample count is not an independent-observation count.",
+        "scope": "CURRENT_INFERENCE_AND_FUTURE_TRADING_RESEARCH"
+      },
+      {
+        "changes_frozen_classification": false,
+        "description": "Eight sessions provide about 24 hours across three UTC dates and seven held-out folds, limiting regime breadth.",
+        "scope": "CURRENT_GENERALIZABILITY_AND_FUTURE_TRADING_RESEARCH"
+      },
+      {
+        "changes_frozen_classification": false,
+        "description": "Frozen pooled Spearman and MSE weight sessions by available sample count rather than equally by session; observed session lengths are similar.",
+        "scope": "CURRENT_FROZEN_ESTIMAND"
+      },
+      {
+        "changes_frozen_classification": false,
+        "description": "The frozen circular-shift null assumes within-session rotation is an appropriate stationarity-based null and introduces one wrap boundary per session.",
+        "scope": "CURRENT_P_VALUE_INTERPRETATION_AND_FUTURE_VALIDATION"
+      },
+      {
+        "changes_frozen_classification": false,
+        "description": "The model OOS MSE improvement is 0.4033958454650646%; the frozen gate requires strict improvement and does not impose an economic-magnitude threshold.",
+        "scope": "FUTURE_TRADING_STRATEGY_RESEARCH"
+      },
+      {
+        "changes_frozen_classification": false,
+        "description": "The sealed report does not retain per-fold predictions, per-session correlations, individual null statistics, the evaluated source commit, or the runtime version, limiting independent forensic reconstruction without a prohibited rerun.",
+        "scope": "CURRENT_AUDITABILITY_AND_FUTURE_RESEARCH_INFRASTRUCTURE"
+      }
+    ],
+    "verdict": "PASS_WITH_LIMITATIONS"
+  },
+  "frozen_result": {
+    "constant_baseline_oos_mse": 8.445544619459023e-08,
+    "final_classification": "STABLE_L2_INFORMATION",
+    "held_out_spearman": 0.12466846092763184,
+    "model_oos_mse": 8.411475643337227e-08,
+    "permutation_p_value": 0.000999000999000999,
+    "positive_held_out_sessions": "7/7",
+    "relative_mse_improvement": 0.004033958454650646,
+    "relative_mse_improvement_percent": 0.4033958454650646
+  },
+  "integrity_bindings": {
+    "current_source_commit_sha": "827ff893ce23c82d4869c6a5a2d7461fe8d984b2",
+    "sealed_evaluation_report_path": "reports/v9_l2_early_information_v2/853870051677af08/confirmatory_evaluation.json",
+    "sealed_evaluation_report_sha256": "298a57f5a5fc01f1fd896ebe338906d6c121baf499d04bca73c06cda9f5bc9c2",
+    "sealed_primary_result_sha256": "350bbad7721ba9d979b911ea790db50c4fa5827f6b155c2afae89b521d39eab1",
+    "v2_manifest_path": "research/v9_l2_early_information_v2/853870051677af08/manifest.json",
+    "v2_manifest_sha256": "f6dd3d95ec595c8d2c9d6f9aca104a963341de21c910af358009fd27fffa6db1"
+  },
+  "preregistration_id": "853870051677af08",
+  "research_interpretation": "V9 establishes confirmatory predictive L2 information only. It does not establish trading profitability, executable edge, or robustness after costs.",
+  "runtime": {
+    "dependencies": {
+      "binance-sdk-spot": "11.1.0",
+      "pytest": "9.1.1",
+      "python-dotenv": "1.2.3",
+      "websockets": "15.0.1"
+    },
+    "predictive_engine_third_party_dependencies": [],
+    "python": "3.12.14"
+  },
+  "session_ids": [
+    "20260909T201433780784Z",
+    "20260909T232056192720Z",
+    "20260910T022450349042Z",
+    "20260910T053020260196Z",
+    "20260910T151806065017Z",
+    "20260910T182431650806Z",
+    "20260910T212857369885Z",
+    "20260911T003526266420Z"
+  ],
+  "next_stage": "Separately preregister a cost-aware trading hypothesis and evaluate it using genuinely new prospective sessions. These eight consumed sessions must not be presented as fresh independent validation evidence.",
+  "restrictions": {
+    "blind_holdout_accessed": false,
+    "post_hoc_tuning_performed": false,
+    "predictive_evaluation_rerun": false,
+    "sealed_evaluation_report_modified": false
+  },
+  "schema_version": 1
+}
