@@ -1,0 +1,61 @@
+name: V10 microstructure GitHub smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v10-microstructure-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: python -m pip install -r requirements.txt
+
+      - name: Prepare fresh isolated CI root and provenance
+        run: python -m src.cli.validate_v10_microstructure_smoke --mode PREPARE
+
+      - name: Collect concurrent public depth and aggTrades for 120 seconds
+        run: |
+          python -m src.cli.record_v10_microstructure \
+            --validate-seconds 120 \
+            --output-root data/ci/v10_microstructure_smoke \
+            --snapshot-limit 5000 \
+            --max-levels 5000
+
+      - name: Locate and mark exactly one CI session
+        id: session
+        if: ${{ always() }}
+        run: python -m src.cli.validate_v10_microstructure_smoke --mode LOCATE
+
+      - name: Validate closure, hashes, dual-stream replay and causality
+        if: ${{ always() && steps.session.outcome == 'success' }}
+        run: python -m src.cli.validate_v10_microstructure_smoke --mode VALIDATE
+
+      - name: Verify canonical research roots remain untouched
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          test ! -e data/microstructure/v10
+          test ! -e data/orderbook/v9
+
+      - name: Upload only this CI smoke session
+        if: ${{ always() && steps.session.outputs.session_dir != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-microstructure-github-smoke
+          path: ${{ steps.session.outputs.session_dir }}
+          retention-days: 3
+          if-no-files-found: error

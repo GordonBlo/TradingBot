@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
+from src.microstructure.ci import reject_ci_research_path
+
 from src.microstructure.v10 import (
     AGGTRADE_SCHEMA, AGGTRADE_STREAM, DEPTH_CONTROL_STREAM, DEPTH_SCHEMA,
     DEPTH_SNAPSHOT_STREAM, DEPTH_STREAM, MANIFEST_SCHEMA, SUMMARY_SCHEMA,
@@ -98,16 +100,16 @@ def _raw_check(path: Path, *, session_id: str, schema: str, started, ended) -> t
     return count, boundaries
 
 
-def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: datetime) -> dict:
+def validate_closed_session_integrity(path: Path, manifest: dict, source_cache: dict, *, now: datetime) -> dict:
+    """Validate artifact integrity only; this function does not grant research eligibility."""
     definition = manifest["definition"]
     directory = path.parent
     session = strict_json(path.read_text(encoding="utf-8"))
     started = utc(session["started_at_utc"])
-    cutoff = utc(definition["prospective_cutoff_utc"])
     result = {
         "session_id": session["session_id"], "manifest_path": str(path),
-        "started_at_utc": timestamp(started), "eligible_microseconds": 0,
-        "classification": "INELIGIBLE", "reason": "",
+        "started_at_utc": timestamp(started), "validated_duration_microseconds": 0,
+        "classification": "INTEGRITY_FAILED", "reason": "",
     }
     summary_path = directory / "closure.summary.json"
     if not summary_path.is_file():
@@ -115,9 +117,6 @@ def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: da
     summary = strict_json(summary_path.read_text(encoding="utf-8"))
     ended = utc(summary["ended_at_utc"])
     result["ended_at_utc"] = timestamp(ended)
-    if started <= cutoff:
-        classification = "CUTOFF_STRADDLING" if started < cutoff < ended else "AT_OR_BEFORE_CUTOFF"
-        return {**result, "classification": classification, "reason": "session start must be strictly after cutoff"}
     require(started < ended <= now, "invalid or future session interval")
     require(session["session_id"] == started.strftime("%Y%m%dT%H%M%S%fZ")
             == directory.name, "session ID/start/directory mismatch")
@@ -214,8 +213,8 @@ def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: da
             and missing == replay["trades_without_depth"], "causal context accounting mismatch")
     require(before == artifact_hashes(directory), "session artifacts changed during readiness")
     return {
-        **result, "classification": "ELIGIBLE", "reason": "all frozen acquisition checks passed",
-        "eligible_microseconds": min(requested * 1_000_000, duration_us),
+        **result, "classification": "INTEGRITY_PASSED", "reason": "closed artifact integrity checks passed",
+        "validated_duration_microseconds": min(requested * 1_000_000, duration_us),
         "artifact_sha256": before, "source_commit_sha": commit,
         "synchronized_timeline_sha256": replay["synchronized_timeline_sha256"],
         "causal_contexts_sha256": contexts_hash.hexdigest(),
@@ -223,7 +222,32 @@ def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: da
     }
 
 
+def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: datetime) -> dict:
+    reject_ci_research_path(path)
+    session = strict_json(path.read_text(encoding="utf-8"))
+    require(session.get("research_eligibility") != "CI_ONLY", "CI_ONLY session is ineligible")
+    started = utc(session["started_at_utc"])
+    cutoff = utc(manifest["definition"]["prospective_cutoff_utc"])
+    result = {"session_id": session["session_id"], "manifest_path": str(path),
+              "started_at_utc": timestamp(started), "eligible_microseconds": 0}
+    summary_path = path.parent / "closure.summary.json"
+    if not summary_path.is_file():
+        return {**result, "classification": "INTERRUPTED", "reason": "normal closure summary missing"}
+    summary = strict_json(summary_path.read_text(encoding="utf-8"))
+    require(summary.get("research_eligibility") != "CI_ONLY", "CI_ONLY session is ineligible")
+    ended = utc(summary["ended_at_utc"])
+    if started <= cutoff:
+        classification = "CUTOFF_STRADDLING" if started < cutoff < ended else "AT_OR_BEFORE_CUTOFF"
+        return {**result, "ended_at_utc": timestamp(ended), "classification": classification,
+                "reason": "session start must be strictly after cutoff"}
+    checked = validate_closed_session_integrity(path, manifest, source_cache, now=now)
+    require(checked["classification"] == "INTEGRITY_PASSED", "session integrity failed")
+    checked["eligible_microseconds"] = checked.pop("validated_duration_microseconds")
+    return {**checked, "classification": "ELIGIBLE", "reason": "all frozen acquisition checks passed"}
+
+
 def scan_readiness(manifest: dict, *, data_root: Path = DATA_ROOT, now: datetime | None = None) -> dict:
+    reject_ci_research_path(data_root)
     verify_manifest(manifest)
     verify_replay_source(manifest)
     root = data_root.resolve()
@@ -237,6 +261,7 @@ def scan_readiness(manifest: dict, *, data_root: Path = DATA_ROOT, now: datetime
         identity = str(path)
         fingerprint = None
         try:
+            reject_ci_research_path(path)
             require(path.resolve().is_relative_to(root), "manifest escapes data root")
             session = strict_json(path.read_text(encoding="utf-8"))
             require(isinstance(session.get("session_id"), str), "invalid session identity")
