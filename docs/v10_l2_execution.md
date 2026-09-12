@@ -1,91 +1,116 @@
-# V10 L2 execution research foundation
+# V10 depth-aware L2 execution research foundation
 
-`src.backtest.v10_l2` is an offline library with no data loading, prediction,
-strategy selection, exchange connection, or order placement. It does not change
-the existing next-bar-open backtester or any frozen research protocol. Adoption
-by an experiment requires a separate preregistration of the execution semantics.
-Consumed V9 evidence is not fresh validation data.
+`src.backtest.v10_l2` is an offline library. It has no prediction, strategy
+selection, dataset loading, exchange connection or order placement. It changes no
+frozen experiment. A future experiment must preregister its inputs and every
+caller-supplied rule. Consumed V9 evidence is not fresh validation evidence.
 
-## Caller contract
+## Causal depth contract
 
-Supply one isolated session of strictly availability-ordered `Quote` records and
-strictly decision-ordered `Decision` records to `replay`. All timestamps must be
-aware, all prices, quantities, cash, and cost rates finite `Decimal` values.
-The caller is responsible for dataset eligibility, session boundaries and frozen
-input provenance; this library does not certify eligibility from a session label.
-Each replay starts flat and must end flat. There is no automatic terminal exit.
+Each immutable `DepthSnapshot` has a symbol, source timestamp, availability
+timestamp, nonnegative sequence ID, and nonempty bid and ask levels. Its symbol
+must match the frozen exchange constraints. Bids must descend and
+asks ascend strictly by price. Prices and available base quantities are positive,
+finite `Decimal` values. Duplicate levels, conflicting duplicate quantities,
+crossed or locked books, regressing source times, regressing sequences, and
+non-increasing availability times fail explicitly.
 
-`ExecutionRules` requires fee bps per side, additional adverse slippage bps per
-side, fixed latency and maximum quote age; there are no chosen cost defaults.
-The base scenario is 10/2 bps per side and stress 20/4 bps per side. Those imply
-24/48 bps nominal round trips **before separately charged spread**, with actual
-fees calculated on each fill notional rather than a flat return subtraction.
+Replay executes each decision at `decision.at + latency`. It selects the latest
+snapshot whose availability is at or before that exact instant. Snapshot age is
+measured from its preserved source timestamp and bounded by `max_quote_age`; no
+future snapshot is substituted. A signal must be available by its decision time,
+and the next decision must occur after the previous execution. Each replay starts
+flat and must finish flat.
 
-Execution occurs exactly at decision time plus latency. The latest quote with
-availability <= execution is used, including a quote available at that instant.
-This is explicit causal carry-forward, bounded by execution minus source time;
-source timestamps are preserved in every fill. No future quote is substituted.
-Missing, crossed, stale, or nonpositive bid/ask fails the replay. Source times
-cannot regress. Decisions cannot precede signal availability. Each subsequent
-decision must occur strictly after the preceding fill; pending orders cannot
-overlap. Latency applies equally to entry and exit.
+## Depth execution and position state
 
-## Position and accounting
+ENTER is a LONG market buy and walks asks from best price upward. EXIT is a market
+sell and walks bids from best price downward. The fill records requested and
+filled base quantity, fill ratio, levels consumed, top quote, unadjusted book
+VWAP, final VWAP after configured adverse slippage, worst book and adjusted fill
+prices, quote notional, fee, and cost attribution.
 
-Only one fully funded LONG position is allowed. ENTER supplies base quantity;
-EXIT liquidates the entire quantity. Both fees are paid in quote currency.
-Entry buys ask multiplied by (1 + slippage rate); exit sells bid multiplied by
-(1 - slippage rate). Cash pays actual notional and fee. No borrowing or shorting.
-The model assumes the caller's size fills at top of book plus configured
-slippage; depth capacity, queueing, partial fills, tick/lot rounding and exchange
-fee-asset discounts are not modeled. It is not a production execution simulator.
+The caller must choose `FULL_FILL_OR_REJECT` or `ALLOW_PARTIAL_FILL`. Full mode
+rejects insufficient causal depth. Partial mode consumes only recorded liquidity.
+A partial entry opens only its actual filled quantity. A partial exit preserves
+the exact residual and requires a later explicit EXIT. Each partial fill and the
+remaining quantity must satisfy the frozen quantity filters; a replay with a
+residual or otherwise open position fails. Liquidity is not invented.
 
-For quantity q, entry/exit midpoint me/mx, ask ae, bid bx, and fills pe/px:
+One fully funded LONG position is allowed. ENTER supplies base quantity; EXIT has
+no quantity and acts on the exact remaining position. Fees are paid in quote
+currency. Cash pays actual fill notional plus entry fee and receives exit notional
+less exit fee. Borrowing, shorting, overlapping positions, pending overlapping
+decisions and implicit terminal liquidation are prohibited.
 
-- Mid-price move (quote-currency PnL): q * (mx - me).
-- Executable gross PnL before extra slippage: q * (bx - ae).
-- Spread cost: mid-price move minus executable gross PnL.
-- Filled gross PnL before fees: q * (px - pe).
-- Slippage cost: executable gross PnL minus filled gross PnL.
-- Fees: entry notional * fee rate + exit notional * fee rate.
-- Net PnL: mid-price move - spread - slippage - fees.
+## Binance Spot constraints
 
-All reported returns use the same denominator, actual entry fill notional, so
-attribution is additive. They are simple fractional returns, not log returns or
-returns on initial cash. `gross_return` includes spread and slippage, before fees;
-`executable_gross_return` includes spread only. `mid_return` is the mid-price PnL
-normalized by entry fill notional. Holding time is exit fill minus entry fill.
-Fill records retain decisions, source/availability/execution timestamps, quote,
-quantity, actual price, notional and per-side fee.
+`ExchangeConstraints` holds caller-frozen `LOT_SIZE`, optional
+`MARKET_LOT_SIZE`, and applicable `MIN_NOTIONAL`/`NOTIONAL` rules. Both quantity
+filters apply to a market order when `MARKET_LOT_SIZE` is present. Zero-valued
+exchangeInfo fields are represented as disabled constraints. Quantity minimum,
+maximum and step checks use exact Decimal remainder arithmetic. Active market
+notional minimum and maximum checks use the actual simulated fill notional.
 
-Aggregate expectancy is the arithmetic mean of trade returns; profit factor is
-positive net PnL / absolute negative net PnL. With no losses it is undefined
-(`null`), with numerator/denominator reported separately. Win rate counts strictly
-positive net PnL. Turnover is both-side actual notional, also divided by initial
-cash. Costs and average cost are in quote currency. Empty-sample rates are null.
-Arithmetic uses an isolated 50-digit Decimal context. JSON uses exact decimal
-strings and UTC timestamps; hashes bind rules, initial cash, quotes, decisions,
-session identity and results. Replaying identical inputs produces identical JSON.
+`exchange_constraints_from_exchange_info` translates an already acquired public
+Binance Spot exchangeInfo payload. `load_public_exchange_constraints` accepts the
+repository's unauthenticated `PublicMarketDataClient` interface and invokes only
+`get_exchange_info`. Recognized filters must be unique and structurally complete.
+Numeric filter values must be exact decimal strings, integers or Decimals; floats
+are refused. `avgPriceMins` and market applicability flags remain hash-bound.
+
+`PRICE_FILTER` is deliberately ignored for fills. Observed reconstructed market
+prices are never rounded to tick size. The adapter does not hardcode current
+BTCUSDC filter values. Constraints are embedded in replay JSON and hashes so an
+experiment must preserve the exchangeInfo-derived model it actually used.
+
+Binance's live market-order notional acceptance may reference a weighted average
+over `avgPriceMins`. This offline engine applies the active constraints to actual
+simulated fill notional. A future preregistration requiring exact admission parity
+must provide and freeze a causal weighted-average-price source and its semantics.
+
+## Additive accounting
+
+For every buy or sell fill, midpoint-to-final execution cost decomposes into:
+
+- spread cost from midpoint to the same-side top quote;
+- depth slippage from that top quote to the book VWAP;
+- configured additional adverse slippage from book VWAP to final VWAP.
+
+For a completed position, exit contributions are quantity-weighted across all
+partial exit fills. The trade identities are:
+
+```text
+mid-price move - spread cost                    = top-of-book gross PnL
+top-of-book gross PnL - depth slippage          = depth-executable gross PnL
+depth-executable gross PnL - adverse slippage   = filled gross PnL
+filled gross PnL - fees                         = final net PnL
+```
+
+Every return uses actual entry fill notional as its denominator. Expectancy is the
+arithmetic mean of trade returns. Profit factor uses positive net PnL divided by
+absolute negative net PnL and is null when there are no losses. Win rate counts
+strictly positive net PnL. Turnover is both-side actual notional. Aggregate costs
+separate spread, depth slippage, additional slippage and fees.
+
+Arithmetic runs in an isolated 50-digit Decimal context. Canonical JSON uses exact
+decimal strings and UTC timestamps. The input hash binds session identity, depth
+snapshots, decisions, execution rules, exchange constraints, fill mode and initial
+cash. The replay hash also binds all fills, trades and aggregate results. Identical
+inputs produce byte-identical JSON and hashes.
 
 ## Event compression
 
-`EventRules` requires trigger threshold, rearm threshold (<= trigger), consecutive
-one-second sample count and cooldown. These must come from an external protocol.
-`EventCompressor` begins unarmed. An observed value <= rearm arms it; a strict
-value > trigger starts persistence. N consecutive qualifying observations emit
-one `SignalEvent` at the Nth observation, retaining the crossing time. No event is
-backdated to the first qualifying second. Nonqualifying observations reset the
-count; gaps also disarm and require a fresh observed rearm. Time reversal fails.
+`EventCompressor` remains strategy-free. Its caller supplies threshold, rearm,
+consecutive one-second persistence and cooldown. It begins unarmed, requires an
+observed rearm value, emits at the final persistence observation, reserves one
+event until explicit release, never queues while busy, and starts cooldown at
+release. Gaps disarm it and require another observed rearm. It schedules no exits,
+quantities or holding periods.
 
-An emitted event reserves the compressor until the caller calls `release` at
-the actual exit (or explicit cancellation) timestamp. Busy observations never
-queue events. Cooldown begins at release. It must expire before a new observed
-rearm and crossing; rearm values observed during cooldown do not count. Equality
-with cooldown expiry is allowed. Observation timestamps must follow release.
-Create a fresh compressor per session. The compressor schedules neither exits
-nor holds and has no knowledge of prices or profitability. Use emitted decision
-and signal-availability timestamps to construct caller-authorized decisions;
-the execution replay independently rejects any overlapping trade schedule.
-
-Only synthetic tests exercise this foundation. No V9 consumed dataset or blind
-holdout is loaded, and no new hypothesis or strategy is evaluated.
+The model still assumes displayed depth remains executable at the selected
+snapshot and applies one uniform extra slippage rate after walking the book. It
+does not model queue depletion between snapshot and arrival, hidden liquidity,
+market impact beyond supplied levels, partial fill timing within an order, tick or
+lot rounding of observed fills, exchange fee-asset discounts, or live rejection
+codes. Only synthetic tests exercise this foundation.
