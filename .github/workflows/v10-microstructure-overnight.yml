@@ -1,0 +1,138 @@
+name: V10 microstructure overnight prospective collection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v10-microstructure-overnight-prospective-collection
+  cancel-in-progress: false
+
+jobs:
+  session_1:
+    name: Prospective session 1 of 3
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "1"
+    outputs: &session_outputs
+      report: ${{ steps.result.outputs.report }}
+    steps: &session_steps
+      - name: Check out repository
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        id: dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Verify frozen preregistration 8326791b411c27b5, cutoff and source
+        id: preflight
+        run: python -m src.cli.validate_v10_overnight --mode PREFLIGHT
+
+      - name: Collect public BTCUSDC depth and aggTrades for exactly 10800 seconds
+        id: collect
+        run: |
+          python -m src.cli.record_v10_microstructure \
+            --duration-seconds 10800 \
+            --output-root data/microstructure/v10 \
+            --snapshot-limit 5000 \
+            --max-levels 5000
+
+      - name: Identify exactly one newly created session
+        id: identify
+        if: ${{ always() && steps.collect.outcome != 'skipped' }}
+        run: python -m src.cli.validate_v10_overnight --mode IDENTIFY
+
+      - name: Validate immutable session using frozen acquisition scanner
+        id: validate
+        if: ${{ always() && steps.identify.outcome == 'success' }}
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+        run: python -m src.cli.validate_v10_overnight --mode VALIDATE
+
+      - name: Upload only this session and its acquisition validation metadata
+        id: upload
+        if: ${{ always() && steps.identify.outputs.session_dir != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.identify.outputs.artifact_name }}
+          path: |
+            ${{ steps.identify.outputs.session_dir }}/depth.jsonl
+            ${{ steps.identify.outputs.session_dir }}/aggtrades.jsonl
+            ${{ steps.identify.outputs.session_dir }}/session.manifest.json
+            ${{ steps.identify.outputs.session_dir }}/closure.summary.json
+            ${{ steps.identify.outputs.session_dir }}/acquisition.validation.json
+          retention-days: 4
+          if-no-files-found: error
+
+      - name: Publish final session result and fail unsuccessful session
+        id: result
+        if: ${{ always() }}
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          PYTHON_OUTCOME: ${{ steps.python.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.dependencies.outcome }}
+          PREFLIGHT_OUTCOME: ${{ steps.preflight.outcome }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          IDENTIFY_OUTCOME: ${{ steps.identify.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: python -m src.cli.validate_v10_overnight --mode PUBLISH
+
+  session_2:
+    name: Prospective session 2 of 3
+    needs: session_1
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "2"
+    outputs: *session_outputs
+    steps: *session_steps
+
+  session_3:
+    name: Prospective session 3 of 3
+    needs: session_2
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SESSION_NUMBER: "3"
+    outputs: *session_outputs
+    steps: *session_steps
+
+  summary:
+    name: Campaign acquisition summary
+    needs: [session_1, session_2, session_3]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CAMPAIGN_NEEDS: ${{ toJSON(needs) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        run: python -m pip install -r requirements.txt
+
+      - name: Report all three sessions and campaign totals
+        run: python -m src.cli.validate_v10_overnight --mode SUMMARY
