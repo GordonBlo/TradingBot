@@ -1,0 +1,118 @@
+{
+  "definition": {
+    "aggtrade_integrity": {
+      "aggregate_and_underlying_id_gaps": "REJECT; counters preserved; no inferred missing trades",
+      "buyer_is_maker": "exact boolean m, preserved without sign reversal",
+      "duplicates": "consecutive identical full payloads retained raw and skipped in derived contexts",
+      "numbers": "strict integer IDs/timestamps; exact decimal text, finite positive price/quantity",
+      "regressions_conflicts_invalid": "REJECT",
+      "required": "at least one accepted unique aggTrade"
+    },
+    "authentication": false,
+    "causality": {
+      "clock_skew": "future exchange timestamps fail integrity; no clock correction inferred",
+      "context": "latest valid reconstructed L2 with availability <= trade receive timestamp",
+      "future_interpolation_or_state_repair": "FORBIDDEN",
+      "merge_key": [
+        "local_receive_utc",
+        "depth_before_aggTrade",
+        "source_record_index"
+      ],
+      "missing_context": "remains missing; counted and allowed; never repaired by future data",
+      "snapshot_bridge_availability": "buffered diff effects become available no earlier than snapshot receipt",
+      "timestamps": "UTC-aware; nonregressing receive time per source; raw receipt within closed session; exchange event <= receive"
+    },
+    "collector_source_sha256_lf_normalized": {
+      "src/cli/record_v10_microstructure.py": "a7223d62a977864bdb3c0b2c5074bc99d9c749626e3ab623a3351bbde9b2181b",
+      "src/exchange/public_market_client.py": "96806407e6e474c2a65e555ec618006dba2ae09a23f4e34dd3100d45f426bc94",
+      "src/microstructure/v10.py": "a2fee999f38ce9a9059ffb69b2031e89c4eb5dca4c241bf85019d2a6faf36644",
+      "src/orderbook/book.py": "ab2fce6a0ef919ee9530f7074cc9b859267be293af7a2ee0e4bb402f06c8c2f5",
+      "src/orderbook/models.py": "1deb696d17cfb3dca93eca710376c26819188a60248fd1d132d5388085bb06c0",
+      "src/orderbook/recorder.py": "cf964dd84d445c54b5304b3086dccd298777472285f7f7ef46bdd1b697c7736b",
+      "src/orderflow/models.py": "6d2de3e64fc47eeca80eb51e1306c12f1c61c43d1b476370aadb903e1a42d64f"
+    },
+    "collector_version": "V10_PUBLIC_L2_AGGTRADES_1",
+    "created_at_utc": "2026-09-12T08:16:38.791122Z",
+    "creation_source_commit_sha": "a6aa2fbf5ef4a32d2c9c1a4403c6e287771045d6",
+    "depth_integrity": {
+      "crossed_invalid_book_states": 0,
+      "invalid_events": 0,
+      "raw_validation": "strict integer update IDs; exact finite decimal text; positive prices, nonnegative depth quantities; duplicate depth prices REJECT",
+      "required": "at least one snapshot and reconstructed update; final book valid",
+      "resolved_gaps": "also REJECT in V1; no recovery exception",
+      "resync_boundaries": "preserved RESYNC_BOUNDARY records; count must match live/replay; replacement snapshot requires a preceding boundary",
+      "sequence_gaps": 0,
+      "synchronization": "existing V9 snapshot/diff U/u bridging and reconstruction"
+    },
+    "evidence_policy": {
+      "blind_holdout": "LOCKED; never accessed",
+      "consumed_v9": "never fresh evidence",
+      "independent_confirmatory_strategy_evidence": "FORBIDDEN unless the strategy hypothesis was frozen before session generation and its eligibility rules pass",
+      "later_discovery": "permitted only under a separately authorized research task"
+    },
+    "market": {
+      "symbol": "BTCUSDC",
+      "venue": "BINANCE_PUBLIC_SPOT"
+    },
+    "modes": [
+      "PLAN",
+      "READINESS"
+    ],
+    "orders": false,
+    "predictive_evaluation": false,
+    "prospective_cutoff_utc": "2026-09-12T08:30:00Z",
+    "protocol_version": "V10_PUBLIC_MICROSTRUCTURE_COLLECTION_V1",
+    "purpose": "DATA_ACQUISITION_ONLY",
+    "readiness": {
+      "dates": "distinct UTC session START dates",
+      "hours": "sum min(requested duration, closed end minus start) for unique non-overlapping eligible sessions",
+      "meaning": "data sufficiency only, not a trading hypothesis or profitability evidence",
+      "minimum_eligible_closed_sessions": 8,
+      "minimum_total_eligible_hours": 24,
+      "minimum_utc_dates": 3
+    },
+    "reconnect_policy": "REJECT any reconnect in either stream: collector V1 has counters but incomplete raw reconnect boundary provenance",
+    "replay": "two independent raw replays must exactly match sealed replay metadata and live counters; hash every causal context during readiness",
+    "session": {
+      "artifact_verification": "exact identity, raw sizes/counts/SHA256, manifest SHA256, closure SHA256 binding; rehash after scan",
+      "closure": "CLOSED_NORMAL and CLOSED_INTEGRITY_PASSED",
+      "duplicates": "byte-identical artifact sets count once; conflicting copies invalidate every copy of that session ID",
+      "duration_seconds": "positive integer <= 86400, declared immutably per session",
+      "identity": "shared immutable ID equal to UTC start formatted YYYYmmddTHHMMSSffffffZ",
+      "interrupted": "REJECT; requires a future separately frozen recovery protocol",
+      "max_levels_per_side": "positive integer <= 5000, declared immutably per session",
+      "overlapping_sessions": "reject every overlapping eligible session; touching endpoints allowed",
+      "raw_persistence": "separate append-only logs, contiguous zero-based source record indices",
+      "required_artifacts": [
+        "session.manifest.json",
+        "closure.summary.json",
+        "depth.jsonl",
+        "aggtrades.jsonl"
+      ],
+      "snapshot_limits": [
+        100,
+        500,
+        1000,
+        5000
+      ],
+      "source_identity": "resolvable Git source commit with the frozen collector source hashes; local replay source must match",
+      "start_rule": "session_start > prospective_cutoff; equality and straddling REJECT"
+    },
+    "streams": {
+      "aggtrades": {
+        "identity": "BTCUSDC_AGGTRADE",
+        "raw_file": "aggtrades.jsonl",
+        "websocket_url": "wss://data-stream.binance.vision/ws/btcusdc@aggTrade"
+      },
+      "depth": {
+        "identity": "BTCUSDC_DIFF_DEPTH_100MS",
+        "raw_file": "depth.jsonl",
+        "rest_snapshot": "PUBLIC_API_V3_DEPTH",
+        "websocket_url": "wss://data-stream.binance.vision/ws/btcusdc@depth@100ms"
+      }
+    },
+    "trading_strategy": false
+  },
+  "definition_sha256": "8326791b411c27b5bad9631ad1cae58d22ed6fb6154977e0256f012840adc1b0",
+  "preregistration_id": "8326791b411c27b5"
+}
