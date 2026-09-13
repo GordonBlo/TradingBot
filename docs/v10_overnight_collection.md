@@ -40,3 +40,13 @@ unless a strategy hypothesis was frozen before session generation.
 Once the files are on the repository default branch, open Actions, select
 "V10 microstructure overnight prospective collection", choose Run workflow,
 select the branch and confirm Run workflow. No schedule is installed.
+
+ALWAYS use `Run workflow` for each new campaign, creating a NEW
+`workflow_dispatch` run. NEVER use `Re-run all jobs` for a completed research
+campaign. Attempts other than 1 fail before checkout, collection or artifact
+upload in every job, including the summary job. The guard does not recover
+artifacts already lost; it is not a substitute for downloading them.
+
+Research campaigns must be started with a NEW workflow_dispatch run. Do not use Re-run all jobs because GitHub replaces artifacts from the previous attempt.
+
+Download and import session artifacts before the four-day retention expiry.

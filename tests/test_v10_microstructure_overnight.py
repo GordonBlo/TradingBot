@@ -216,3 +216,34 @@ def test_existing_smoke_and_manifest_unchanged():
     assert sha256_file(WORKSPACE / ".github/workflows/v10-microstructure-github-smoke.yml") == (
         "6d76db39319288261998de91ba5be491093cc0c9ddc5f0ea84a1eaa4caa08f75"
     )
+
+
+def test_overnight_rerun_guard_is_first_in_every_job():
+    workflow = (WORKSPACE / ".github/workflows/v10-microstructure-overnight.yml").read_text()
+    guard = (
+        "      - &first_attempt_guard\n"
+        "        name: Reject research campaign re-runs\n"
+        "        if: ${{ github.run_attempt != 1 }}\n"
+        "        shell: bash\n"
+        "        run: |\n"
+        '          echo "Research campaigns must be started with a NEW workflow_dispatch run. '
+        'Do not use Re-run all jobs because GitHub replaces artifacts from the previous attempt."\n'
+        "          exit 1\n"
+    )
+    assert "    steps: &session_steps\n" + guard in workflow
+    assert workflow.count("steps: *session_steps") == 2
+    assert "    steps:\n      - *first_attempt_guard\n" in workflow.split("  summary:\n")[1]
+    assert guard + "\n      - name: Check out repository" in workflow
+    # The always-running publication step must not bypass the failed guard.
+    assert "id: result\n        if: ${{ always() && github.run_attempt == 1 }}" in workflow
+    assert "if: ${{ always() && steps.collect.outcome != 'skipped' }}" in workflow
+    assert "if: ${{ always() && steps.identify.outcome == 'success' }}" in workflow
+    assert "if: ${{ always() && steps.identify.outputs.session_dir != '' }}" in workflow
+    assert "continue-on-error:" not in workflow
+
+
+def test_overnight_documentation_requires_new_campaign_and_prompt_import():
+    documentation = (WORKSPACE / "docs/v10_overnight_collection.md").read_text()
+    assert "ALWAYS use `Run workflow` for each new campaign" in documentation
+    assert "NEVER use `Re-run all jobs` for a completed research" in documentation
+    assert "Download and import session artifacts before the four-day retention expiry." in documentation

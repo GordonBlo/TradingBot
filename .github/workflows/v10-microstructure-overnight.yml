@@ -20,6 +20,14 @@ jobs:
     outputs: &session_outputs
       report: ${{ steps.result.outputs.report }}
     steps: &session_steps
+      - &first_attempt_guard
+        name: Reject research campaign re-runs
+        if: ${{ github.run_attempt != 1 }}
+        shell: bash
+        run: |
+          echo "Research campaigns must be started with a NEW workflow_dispatch run. Do not use Re-run all jobs because GitHub replaces artifacts from the previous attempt."
+          exit 1
+
       - name: Check out repository
         id: checkout
         uses: actions/checkout@v4
@@ -78,7 +86,7 @@ jobs:
 
       - name: Publish final session result and fail unsuccessful session
         id: result
-        if: ${{ always() }}
+        if: ${{ always() && github.run_attempt == 1 }}
         env:
           CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
           PYTHON_OUTCOME: ${{ steps.python.outcome }}
@@ -121,6 +129,8 @@ jobs:
     env:
       CAMPAIGN_NEEDS: ${{ toJSON(needs) }}
     steps:
+      - *first_attempt_guard
+
       - name: Check out repository
         uses: actions/checkout@v4
         with:
