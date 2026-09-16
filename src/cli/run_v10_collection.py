@@ -15,6 +15,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True, choices=("PLAN", "READINESS"))
     parser.add_argument("--data-root", type=Path, default=DATA_ROOT)
+    parser.add_argument("--workers", type=int, default=None,
+                        help="session validation processes (default: up to 4 CPUs; 1: serial)")
     return parser
 
 
@@ -23,7 +25,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         path, manifest = load_manifest()
         before = sha256_file(path)
-        result = manifest if args.mode == "PLAN" else scan_readiness(manifest, data_root=args.data_root)
+        result = manifest if args.mode == "PLAN" else scan_readiness(
+            manifest, data_root=args.data_root, workers=args.workers)
         if sha256_file(path) != before:
             raise ValueError("preregistration changed during scan")
         print(json.dumps({"manifest_sha256": before, **result}, sort_keys=True, indent=2))

@@ -14,7 +14,7 @@ from src.microstructure.v10 import (
 )
 from src.research.v10_collection_preregistration import (
     WORKSPACE, build_manifest, load_manifest, prospective_cutoff,
-    source_hashes, verify_manifest,
+    canonical, source_hashes, verify_manifest,
 )
 from src.research.v10_collection_readiness import scan_readiness
 
@@ -66,7 +66,11 @@ def make_session(root, protocol, *, started=START, duration=10800, duplicate=Fal
 
 
 def scan(root, protocol):
-    return scan_readiness(protocol, data_root=root, now=SCAN_TIME)
+    serial = scan_readiness(protocol, data_root=root, now=SCAN_TIME, workers=1)
+    parallel = scan_readiness(protocol, data_root=root, now=SCAN_TIME, workers=2)
+    assert serial == parallel
+    assert canonical(serial) == canonical(parallel)
+    return serial
 
 
 @pytest.mark.parametrize("created,expected", [

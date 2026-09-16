@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+import multiprocessing
+import os
 import re
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import asdict
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import Decimal, getcontext, setcontext
+from itertools import repeat
 from pathlib import Path
 
 from src.microstructure.ci import reject_ci_research_path
@@ -25,6 +30,7 @@ from src.research.v10_collection_preregistration import (
 
 DATA_ROOT = WORKSPACE / "data/microstructure/v10"
 ARTIFACTS = ("session.manifest.json", "closure.summary.json", "depth.jsonl", "aggtrades.jsonl")
+DEFAULT_MAX_WORKERS = 4
 
 
 def require(condition: bool, reason: str) -> None:
@@ -246,7 +252,65 @@ def _validate_session(path: Path, manifest: dict, source_cache: dict, *, now: da
     return {**checked, "classification": "ELIGIBLE", "reason": "all frozen acquisition checks passed"}
 
 
-def scan_readiness(manifest: dict, *, data_root: Path = DATA_ROOT, now: datetime | None = None) -> dict:
+def session_worker_count(session_count: int, workers: int | None = None) -> int:
+    """Auto uses at most four CPUs; explicit overrides remain CPU/session bounded."""
+    if workers is not None and (type(workers) is not int or workers < 1):
+        raise ValueError("workers must be a positive integer")
+    return max(1, min(session_count, os.cpu_count() or 1,
+                      DEFAULT_MAX_WORKERS if workers is None else workers))
+
+
+def _scan_session(path: Path, root: Path, manifest: dict, source_cache: dict, now: datetime) -> tuple:
+    # This is the original serial per-path body, including its exception boundary.
+    identity = str(path)
+    fingerprint = None
+    try:
+        reject_ci_research_path(path)
+        require(path.resolve().is_relative_to(root), "manifest escapes data root")
+        session = strict_json(path.read_text(encoding="utf-8"))
+        require(isinstance(session.get("session_id"), str), "invalid session identity")
+        identity = session["session_id"]
+        for name in ARTIFACTS:
+            require((path.parent / name).resolve().is_relative_to(root), "artifact escapes data root")
+        if all((path.parent / name).is_file() for name in ARTIFACTS):
+            fingerprint = artifact_hashes(path.parent)
+        result = _validate_session(path, manifest, source_cache, now=now)
+    except (ValueError, OSError, KeyError, TypeError, ArithmeticError, AttributeError) as exc:
+        result = {"session_id": identity, "manifest_path": str(path),
+                  "classification": "INTEGRITY_FAILED", "eligible_microseconds": 0, "reason": str(exc)}
+    return identity, result, fingerprint
+
+
+def _initialize_worker(decimal_context) -> None:
+    global _worker_source_cache
+    _worker_source_cache = {}
+    setcontext(decimal_context)
+
+
+def _scan_session_worker(path: Path, root: Path, manifest: dict, now: datetime) -> tuple:
+    return _scan_session(path, root, manifest, _worker_source_cache, now)
+
+
+def _scan_sessions(paths, root, manifest, now, workers):
+    count = session_worker_count(len(paths), workers)
+    if count == 1:
+        source_cache = {}
+        for path in paths:
+            yield _scan_session(path, root, manifest, source_cache, now)
+        return
+    # Spawn avoids inheriting mutable runtime state or file handles. Only paths,
+    # the frozen manifest and one observation time cross the process boundary.
+    # map yields in canonical input order, never completion order.
+    try:
+        with ProcessPoolExecutor(max_workers=count, mp_context=multiprocessing.get_context("spawn"),
+                                 initializer=_initialize_worker, initargs=(getcontext().copy(),)) as pool:
+            yield from pool.map(_scan_session_worker, paths, repeat(root), repeat(manifest), repeat(now))
+    except BrokenProcessPool as exc:
+        raise ValueError("parallel session validation failed; no readiness result published") from exc
+
+
+def scan_readiness(manifest: dict, *, data_root: Path = DATA_ROOT, now: datetime | None = None,
+                   workers: int | None = 1) -> dict:
     reject_ci_research_path(data_root)
     verify_manifest(manifest)
     verify_replay_source(manifest)
@@ -256,24 +320,8 @@ def scan_readiness(manifest: dict, *, data_root: Path = DATA_ROOT, now: datetime
     observed_now = utc(timestamp(now or datetime.now(UTC)))
     sessions = []
     groups = {}
-    source_cache = {}
-    for path in sorted(root.rglob("session.manifest.json")) if root.exists() else []:
-        identity = str(path)
-        fingerprint = None
-        try:
-            reject_ci_research_path(path)
-            require(path.resolve().is_relative_to(root), "manifest escapes data root")
-            session = strict_json(path.read_text(encoding="utf-8"))
-            require(isinstance(session.get("session_id"), str), "invalid session identity")
-            identity = session["session_id"]
-            for name in ARTIFACTS:
-                require((path.parent / name).resolve().is_relative_to(root), "artifact escapes data root")
-            if all((path.parent / name).is_file() for name in ARTIFACTS):
-                fingerprint = artifact_hashes(path.parent)
-            result = _validate_session(path, manifest, source_cache, now=observed_now)
-        except (ValueError, OSError, KeyError, TypeError, ArithmeticError, AttributeError) as exc:
-            result = {"session_id": identity, "manifest_path": str(path),
-                      "classification": "INTEGRITY_FAILED", "eligible_microseconds": 0, "reason": str(exc)}
+    paths = sorted(root.rglob("session.manifest.json")) if root.exists() else []
+    for identity, result, fingerprint in _scan_sessions(paths, root, manifest, observed_now, workers):
         sessions.append(result)
         groups.setdefault(identity, []).append((result, fingerprint))
     # Bind the complete scan, including earlier sessions while later ones replayed.

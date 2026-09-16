@@ -255,7 +255,7 @@ def _existing(root: Path, session_id: str) -> list[Path]:
     return sorted(found)
 
 
-def import_artifacts(zip_paths, *, workspace: Path = WORKSPACE, now=None) -> dict:
+def import_artifacts(zip_paths, *, workspace: Path = WORKSPACE, now=None, progress=None) -> dict:
     """Import each artifact independently; the CLI performs the final canonical READINESS run."""
     _, manifest = protocol()
     workspace = workspace.absolute()
@@ -263,8 +263,13 @@ def import_artifacts(zip_paths, *, workspace: Path = WORKSPACE, now=None) -> dic
     reject_ci_research_path(root)
     _directory(root)
     result = {"imported_session_ids": [], "identical_duplicates_skipped": [], "rejected_artifacts": []}
-    for value in zip_paths:
+    total = len(zip_paths) if hasattr(zip_paths, "__len__") else "?"
+    for index, value in enumerate(zip_paths, 1):
         path = Path(value).absolute()
+        def announce(stage):
+            if progress is not None:
+                progress(f"[{index}/{total}] {stage}")
+        announce("inspecting")
         try:
             require(path.name.startswith("v10-microstructure-overnight-") and path.suffix.lower() == ".zip",
                     "filename must match v10-microstructure-overnight-*.zip")
@@ -275,7 +280,9 @@ def import_artifacts(zip_paths, *, workspace: Path = WORKSPACE, now=None) -> dic
                 with _lock(root.parent), tempfile.TemporaryDirectory(prefix=".v10-import-", dir=root.parent) as temporary:
                     staging = Path(temporary)
                     directory = _extract(archive, inspected, staging)
+                    announce("replaying")
                     validate_staged(staging, inspected, manifest, now=now)
+                    announce("validated")
                     protocol()  # Fail closed if the frozen protocol/source changed during replay.
                     target = session_paths(root, started_at=utc(inspected.session["started_at_utc"])).directory
                     existing = _existing(root, inspected.session_id)
@@ -292,11 +299,14 @@ def import_artifacts(zip_paths, *, workspace: Path = WORKSPACE, now=None) -> dic
         except (OSError, ValueError, KeyError, TypeError, ArithmeticError, AttributeError, RuntimeError,
                 zipfile.BadZipFile, zipfile.LargeZipFile, zlib.error) as exc:
             result["rejected_artifacts"].append({"path": str(path), "reason": str(exc)})
+            announce("rejected")
     return result
 
 
-def run_readiness() -> dict:
+def run_readiness(*, workers: int | None = None) -> dict:
     command = [sys.executable, "-m", "src.cli.run_v10_collection", "--mode", "READINESS"]
+    if workers is not None:
+        command.extend(("--workers", str(workers)))
     completed = subprocess.run(command, cwd=WORKSPACE, capture_output=True, text=True, check=False)
     require(completed.returncode in (0, 2), "READINESS failed: " + (completed.stdout + completed.stderr).strip())
     report = strict_json(completed.stdout)
@@ -308,18 +318,26 @@ def run_readiness() -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("zip_paths", type=Path, nargs="+")
+    parser.add_argument("--workers", type=int, default=None,
+                        help="final readiness processes (default: up to 4 CPUs; 1: serial)")
     args = parser.parse_args(argv)
+    if args.workers is not None and args.workers < 1:
+        parser.error("--workers must be a positive integer")
+    def progress(message):
+        print(message, file=sys.stderr, flush=True)
     try:
-        result = import_artifacts(args.zip_paths)
+        result = import_artifacts(args.zip_paths, progress=progress)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"V10 IMPORT INTEGRITY_FAILURE: {exc}")
         return 1
     try:
-        readiness = run_readiness()
+        progress("FINAL READINESS validating")
+        readiness = run_readiness(workers=args.workers)
         result.update(eligible_sessions=readiness["eligible_sessions"], eligible_hours=readiness["eligible_hours"],
                       eligible_utc_dates=readiness["eligible_utc_dates"], readiness_status=readiness["status"])
     except (OSError, ValueError, KeyError, TypeError) as exc:
         result.update(readiness_status="INTEGRITY_FAILURE", readiness_error=str(exc))
+    progress(f"FINAL READINESS {result['readiness_status']}")
     print(json.dumps(result, indent=2, sort_keys=True))
     return 1 if result["rejected_artifacts"] or result["readiness_status"] == "INTEGRITY_FAILURE" else 0
 

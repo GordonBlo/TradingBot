@@ -48,6 +48,23 @@ After processing all ZIPs, the CLI automatically runs only:
 python -m src.cli.run_v10_collection --mode READINESS
 ```
 
+READINESS validates independent sessions with a spawned process pool, using at most
+four logical CPUs and no more workers than sessions. Both CLIs accept `--workers N`;
+`--workers 1` uses the original serial path. Explicit counts are capped by logical
+CPUs and session count. The Python scanner API defaults to serial; pass `workers=None`
+for automatic selection. Each worker runs the same raw checks, two replays, causal
+context validation and artifact hashing. Results merge in sorted manifest-path order;
+duplicate/overlap checks, final rehashing and readiness gates remain serial.
+Scripts using the parallel Python API need a guarded `if __name__ == "__main__":`
+entry point for process spawning; both CLIs already provide one.
+
+Archives are still inspected, staged, validated and atomically published sequentially.
+The optimized path is used by the final dataset READINESS scan. Progress such as
+`[1/3] inspecting`, `[1/3] replaying`, `[1/3] validated` and `FINAL READINESS NOT_READY`
+goes to stderr; stdout remains deterministic JSON. A process-pool failure aborts the
+scan without publishing a readiness result. More workers increase memory use; use
+`--workers 1` for constrained machines or serial debugging.
+
 JSON output reports imported IDs, identical duplicates, rejected paths with reasons,
 eligible sessions/hours/UTC start dates, and readiness status. Exit code 1 means an
 artifact was rejected or readiness could not complete; 0 means the import completed

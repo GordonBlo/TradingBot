@@ -281,15 +281,44 @@ def test_readiness_command_is_exact_and_nonpredictive(monkeypatch):
 
 def test_cli_automatically_runs_readiness_and_prints_import_results(monkeypatch, capsys):
     order = []
-    def fake_import(paths):
+    def fake_import(paths, *, progress):
         order.append("import")
+        progress("[1/1] inspecting")
+        progress("[1/1] replaying")
+        progress("[1/1] validated")
         return {"imported_session_ids": ["session"], "identical_duplicates_skipped": [], "rejected_artifacts": []}
-    def fake_readiness():
+    def fake_readiness(*, workers):
         order.append("READINESS")
+        assert workers == 2
         return {"eligible_sessions": 1, "eligible_hours": "3", "eligible_utc_dates": ["2026-09-13"], "status": "NOT_READY"}
     monkeypatch.setattr(importer, "import_artifacts", fake_import)
     monkeypatch.setattr(importer, "run_readiness", fake_readiness)
-    assert importer.main(["v10-microstructure-overnight-test.zip"]) == 0
-    output = json.loads(capsys.readouterr().out)
+    assert importer.main(["--workers", "2", "v10-microstructure-overnight-test.zip"]) == 0
+    captured = capsys.readouterr()
+    output = json.loads(captured.out)
+    assert captured.err.splitlines() == ["[1/1] inspecting", "[1/1] replaying", "[1/1] validated",
+                                        "FINAL READINESS validating", "FINAL READINESS NOT_READY"]
     assert output["readiness_status"] == "NOT_READY" and output["eligible_hours"] == "3"
     assert order == ["import", "READINESS"]
+
+
+@pytest.mark.parametrize("workers", [1, 2])
+def test_readiness_subprocess_worker_override(monkeypatch, workers):
+    def fake(command, **kwargs):
+        assert command[-2:] == ["--workers", str(workers)]
+        return subprocess.CompletedProcess(command, 2, '{"status":"NOT_READY"}', "")
+    monkeypatch.setattr(importer.subprocess, "run", fake)
+    assert importer.run_readiness(workers=workers)["status"] == "NOT_READY"
+
+
+def test_real_import_progress_and_parallel_final_readiness(artifact_factory, tmp_path):
+    archives = [artifact_factory(index)[0] for index in range(2)]
+    messages = []
+    workspace = tmp_path / "destination"
+    result = importer.import_artifacts(archives, workspace=workspace, now=SCAN_TIME, progress=messages.append)
+    assert not result["rejected_artifacts"]
+    assert messages == [f"[{i}/2] {stage}" for i in (1, 2) for stage in ("inspecting", "replaying", "validated")]
+    manifest = load_manifest()[1]
+    serial = scan_readiness(manifest, data_root=workspace / importer.ROOT, now=SCAN_TIME, workers=1)
+    parallel = scan_readiness(manifest, data_root=workspace / importer.ROOT, now=SCAN_TIME, workers=2)
+    assert importer.canonical(serial) == importer.canonical(parallel)
