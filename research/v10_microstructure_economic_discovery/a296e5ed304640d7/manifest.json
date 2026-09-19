@@ -1,0 +1,567 @@
+{
+  "definition": {
+    "created_at_utc": "2026-09-16T18:35:39.278501Z",
+    "creation_source_commit_sha": "b0168067350b2c90a0313037eacdf0f31242a0ce",
+    "dataset": {
+      "bound_at_utc": "2026-09-16T18:35:38.745338Z",
+      "readiness": {
+        "blind_holdout": "LOCKED",
+        "checks": {
+          "eligible_hours": true,
+          "eligible_sessions": true,
+          "utc_dates": true
+        },
+        "data_sufficiency_only": true,
+        "eligible_hours": "24",
+        "eligible_session_ids": [
+          "20260913T192323929783Z",
+          "20260913T223513036401Z",
+          "20260914T015309595012Z",
+          "20260914T212646630426Z",
+          "20260915T004347737080Z",
+          "20260915T174845528831Z",
+          "20260915T211259081136Z",
+          "20260916T003212326370Z"
+        ],
+        "eligible_sessions": 8,
+        "eligible_utc_dates": [
+          "2026-09-13",
+          "2026-09-14",
+          "2026-09-15",
+          "2026-09-16"
+        ],
+        "independent_confirmatory_strategy_evidence": false,
+        "manifest_sha256": "8368b421bb1fa1af0823fc5139facb36274b18d7151935b48d71a45b2c3c5c10",
+        "predictive_outcomes_evaluated": false,
+        "preregistration_definition_sha256": "8326791b411c27b5bad9631ad1cae58d22ed6fb6154977e0256f012840adc1b0",
+        "preregistration_id": "8326791b411c27b5",
+        "prospective_cutoff_utc": "2026-09-12T08:30:00Z",
+        "sessions": [
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "3c81324207ce9ae946148762d0cb8b4e660cca4c8442ccfc52c7f20e27bc26db",
+              "closure.summary.json": "6d11c4dba97601b220413b46017fb590409583be8c7e043c3ab8f597257b3f74",
+              "depth.jsonl": "ba1b82f3079b1bcc072162eb20eec727d123759ca8bea21cc3a068151f06458d",
+              "session.manifest.json": "4316995bc671627df3abb1a98e73b51e502273f4220ccbd509c360e74c265ede"
+            },
+            "causal_contexts_sha256": "eaef586e138bf26aa741b3e514784319ad6ecd23315a39f41fd58d4e9904ca0c",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-13T22:23:28.939527Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/13/20260913T192323929783Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260913T192323929783Z",
+            "source_commit_sha": "e5db419823729b557c4673264da9bf9006768bae",
+            "started_at_utc": "2026-09-13T19:23:23.929783Z",
+            "synchronized_timeline_sha256": "bdc2bd4c110482967d1e0444a0ee30ff7400b4be1b483a3f6d9fe695a5f91378",
+            "trades_without_depth": 0
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "e3e559997d3f9ecd7c87091e62d67a65886a8b4780be07e53c1556ef72fc16f7",
+              "closure.summary.json": "632d7f3fb8c6ba39e2a662debe51b2108c6357fdb06f1cd3b6940aa334389ff2",
+              "depth.jsonl": "4970f1ddac7c624d3771218d268ec4a88d9b8bf8b4dc240270a348cb1d1f8d52",
+              "session.manifest.json": "fbb20b8f76fe27496bdf2f228c850f89719fab1258f291c2190ac0b50ecd582e"
+            },
+            "causal_contexts_sha256": "7a09911b1e5dd9f13d9a003b1d34f59bd1325691a99d97dbc654dbc14a2adaa5",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-14T01:35:18.049631Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/13/20260913T223513036401Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260913T223513036401Z",
+            "source_commit_sha": "e5db419823729b557c4673264da9bf9006768bae",
+            "started_at_utc": "2026-09-13T22:35:13.036401Z",
+            "synchronized_timeline_sha256": "6e4d15cad166727d1a0a0f7517aa9bf05d0f28bdbe7127fbd70b4ddadcc31f8a",
+            "trades_without_depth": 0
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "e2a837889d4d1d5a9b0272fa2b61ade5d66cab9d1e0243077f77c396ca50b1dd",
+              "closure.summary.json": "adadd1952989483822cc113965551ee71edd567369cbb09a9560bc633b0ee919",
+              "depth.jsonl": "b85e54b645491f405c40d9b619facea9fa347e52b13cdb7355a1df065c88a296",
+              "session.manifest.json": "ade8c1d7a562892b0cd5322e5fc9eccc021328bcae7f40ded5b9c0f0653ea888"
+            },
+            "causal_contexts_sha256": "b8883a509794859fd1ccd277956b4ac8812a84b01d56b7874abb8568e34559d0",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-14T04:53:14.605264Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/14/20260914T015309595012Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260914T015309595012Z",
+            "source_commit_sha": "e5db419823729b557c4673264da9bf9006768bae",
+            "started_at_utc": "2026-09-14T01:53:09.595012Z",
+            "synchronized_timeline_sha256": "7134ed247199d181b6bd73083c37ce7875de1895fddaed6bf7365ef14c955140",
+            "trades_without_depth": 0
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "13947ce0c001bdb1f497b16a053d505c4b7938079f81366d9b97aed1501b0469",
+              "closure.summary.json": "3d24a83a067765dc70c452a55898fb8b6d9b7e5ef41be215573e350556c64c4b",
+              "depth.jsonl": "2fb5ee7e684c9d14bb3dd1a067a0c25a5e6654d792e9dec379e01e7860c5278b",
+              "session.manifest.json": "b63b7155b0624b77951205e69c435b6a58227430f805be3055b1af4773691b9d"
+            },
+            "causal_contexts_sha256": "b7f75cf5353d01f730a2e1caf52fd506d95fc91c826a97b7e2719f4b28fa2760",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-15T00:26:52.390012Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/14/20260914T212646630426Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260914T212646630426Z",
+            "source_commit_sha": "7236119969ce7a25fa328d772c1049533031055c",
+            "started_at_utc": "2026-09-14T21:26:46.630426Z",
+            "synchronized_timeline_sha256": "335f529b4a3cfce7366ac9711dcad45418194a4b91e33f09eaa6ed8a38fc89d2",
+            "trades_without_depth": 0
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "a7f549a4820c424a03cef707bff3c8eb9fdae9bcfa3fa734976db347e8317a02",
+              "closure.summary.json": "de77e35b0f1ee189935c224baf7677f40367a887e357fcb143dd2587974a2e3c",
+              "depth.jsonl": "0cad0dcca4587a50008b8f83d6dcc8c4e3bace4ef9e54700b0114cbe7db791fe",
+              "session.manifest.json": "ffdc8429ea52d14435bbd32010dc17fb2a7876aeb380eb4d9b5b54db1ec9b510"
+            },
+            "causal_contexts_sha256": "dd2c5072141936daf5d3388c0359035c8718f5bef79aff4ea0471eabd89fcf08",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-15T03:43:52.763419Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/15/20260915T004347737080Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260915T004347737080Z",
+            "source_commit_sha": "7236119969ce7a25fa328d772c1049533031055c",
+            "started_at_utc": "2026-09-15T00:43:47.737080Z",
+            "synchronized_timeline_sha256": "1329546a299da746d931a8496feb7970b1915c6832153c948ece57a031ea74ba",
+            "trades_without_depth": 0
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "2d7f6fbc77299d4f927a82ff6f2ec3622b35b17aeb0e1fd33fb16641155e46c3",
+              "closure.summary.json": "cfcb426d87c859ed0251cb1a8492fe5b736d347cc073ce10453d578ab6e5bf73",
+              "depth.jsonl": "4ae96aa423fce5187175df661ae2665840562f2d34d37a4fa278e2c0b9500600",
+              "session.manifest.json": "d1947462d32db14a88a53d3e42c108bec26763ecf0192f6bfd81f09a3997be92"
+            },
+            "causal_contexts_sha256": "82c277aa1388329177a59a2a3eb3c77c951b7a51147cf8c493b5a0603ce0b17d",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-15T20:48:50.540756Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/15/20260915T174845528831Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260915T174845528831Z",
+            "source_commit_sha": "7236119969ce7a25fa328d772c1049533031055c",
+            "started_at_utc": "2026-09-15T17:48:45.528831Z",
+            "synchronized_timeline_sha256": "627abd0993df772a67de3b15710bb452996dc5432ddc0598690fba29ecb8f09a",
+            "trades_without_depth": 17
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "50e562d91aaf5eeeb17c85c92755ef382e73dd08bc591083a7293e0a119761ac",
+              "closure.summary.json": "08f883c9d045d1346125fb235cd1327c873e36a98581acd6eeb626bc28e1a89f",
+              "depth.jsonl": "af2d513658037ac52dc1b4b3be4274ae9b1e7492f8bb47adc9fa75ca78d1b0f5",
+              "session.manifest.json": "02413597abf542e478bb8c71349f02ad76ca40a84027fec0d7c77db33a0b8cda"
+            },
+            "causal_contexts_sha256": "f8662dd64bdb390e64c12f0f0fc819e64447255763d02087b9f4a2a8056d3d0c",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-16T00:13:04.091647Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/15/20260915T211259081136Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260915T211259081136Z",
+            "source_commit_sha": "7236119969ce7a25fa328d772c1049533031055c",
+            "started_at_utc": "2026-09-15T21:12:59.081136Z",
+            "synchronized_timeline_sha256": "d1d7b3911b9b8430faebee0988f18c5919486beb523325284abe401693389fe7",
+            "trades_without_depth": 5
+          },
+          {
+            "artifact_sha256": {
+              "aggtrades.jsonl": "e5c9ac3fdef9895d64589da593d4c5b32d39b369f99650c2b4798418e06b1d27",
+              "closure.summary.json": "d399f970df39a4fddca25f31f69c1132055d7d0601d1770d84fee1b73cda58d3",
+              "depth.jsonl": "9a975b11eb2bab34a2417ee8dabb26f1a70cf7af6994f6f783835182369cef60",
+              "session.manifest.json": "0ae017e5a4f107f96862a35aa237d6ba3e2d5e415ddd6e96856cb2ed1886a500"
+            },
+            "causal_contexts_sha256": "28f4c137f94642a3a80db5191dac82ac1f5cc4915399ad9d52a1ec1370bfa657",
+            "classification": "ELIGIBLE",
+            "eligible_microseconds": 10800000000,
+            "ended_at_utc": "2026-09-16T03:32:17.339506Z",
+            "manifest_path": "data/microstructure/v10/BTCUSDC/2026/09/16/20260916T003212326370Z/session.manifest.json",
+            "reason": "all frozen acquisition checks passed",
+            "session_id": "20260916T003212326370Z",
+            "source_commit_sha": "7236119969ce7a25fa328d772c1049533031055c",
+            "started_at_utc": "2026-09-16T00:32:12.326370Z",
+            "synchronized_timeline_sha256": "a81f3217586f44ed5ca8f1abf3080f1899c86907ccd33b3dae9850e755f1cf2d",
+            "trades_without_depth": 0
+          }
+        ],
+        "status": "READY"
+      },
+      "readiness_sha256": "0ea2c6dddc68c9753f5e2ea19241cd547c5203e3a9f742709f63750b82170350",
+      "root": "data/microstructure/v10",
+      "validation_sha256": {
+        "20260913T192323929783Z": "618c04587f72a4c4a3a1e4f80f0c7e9af52a3ecd79cabbc05c3ec936b0d77857",
+        "20260913T223513036401Z": "ecf9a0a3b918ee9ead36a23799b5bfff7b298d25127e8edd061317da11b137e7",
+        "20260914T015309595012Z": "c219811d5c1c4d006ae8a4a0bd3d39062abe52c0279b9c1469599d74a60014c0",
+        "20260914T212646630426Z": "02a8c31fc539349f6d901652d5cd88d82cad359c53b181b1c20337dee4311970",
+        "20260915T004347737080Z": "7ca9555de98155aa1d5977229a008e2345e660a8bc3a7fe105e4edb6adb2765d",
+        "20260915T174845528831Z": "ad5c325ccd7a8563069f44d7bea8b6bb01629851c215b7272f803293340094b8",
+        "20260915T211259081136Z": "acf1d9ebe9fc635bec3ede69e6854ba5d8ce07aa41407843e81c46d8dfbfb1eb",
+        "20260916T003212326370Z": "54d9197ae3fec3c764c538619d394a0de1917bea7936ab506a1e019eb5d9bea7"
+      }
+    },
+    "protocol_version": "V10_MICROSTRUCTURE_ECONOMIC_DISCOVERY_V1",
+    "reference_sources_sha256_lf_normalized": {
+      "src/backtest/execution.py": "edc892354ea9acea9cb76900cc2f12284aff845203704d86b72c0cdd63a9e4d0",
+      "src/backtest/v10_l2.py": "b650f11ad74932aaf933d7b094560d70ca5626c6a085a2a9de025fe87967dd6c",
+      "src/diagnostics/v8_derivatives_discovery.py": "c1ba00123c690245fa3dd9dd978dc7c5192939fa9d81e5a605f9033749e81286",
+      "src/microstructure/v10.py": "a2fee999f38ce9a9059ffb69b2031e89c4eb5dca4c241bf85019d2a6faf36644",
+      "src/orderbook/book.py": "ab2fce6a0ef919ee9530f7074cc9b859267be293af7a2ee0e4bb402f06c8c2f5",
+      "src/orderbook/features.py": "ac3654c7d519a7223884cd4557f24246eb109d5087727f5ea2f5a310af987aba",
+      "src/orderbook/models.py": "1deb696d17cfb3dca93eca710376c26819188a60248fd1d132d5388085bb06c0",
+      "src/orderflow/models.py": "6d2de3e64fc47eeca80eb51e1306c12f1c61c43d1b476370aadb903e1a42d64f",
+      "src/research/v10_collection_readiness.py": "c4375501bf04926bde81ababd2c289982529ab5259f4ce4dbc38d7b28909d761"
+    },
+    "rules": {
+      "authorization": {
+        "available_modes": [
+          "PLAN",
+          "VERIFY"
+        ],
+        "executions_permitted_now": 0,
+        "future_requirement": "Separate explicit user authorization naming this ID; implement and synthetic-test the exact protocol before opening outcomes.",
+        "maximum_future_authorized_diagnostic_runs": 1,
+        "one_time_seal": "Future executor must exclusively reserve a persistent run ledger before target construction; an existing reservation/result forbids another outcome run, including after interruption.",
+        "post_execution": "Recheck binding; seal input/source/runtime/report hashes and consume dataset. Integrity failure produces no research classification and no silent retry.",
+        "pre_execution": "Require frozen manifest, reference sources, exact five-file hashes for all eight IDs and fresh acquisition READY; no added/dropped/substituted sessions.",
+        "state": "PREREGISTERED_NOT_AUTHORIZED_TO_EXECUTE"
+      },
+      "classification": {
+        "economic_gate_all_required": {
+          "anchor_base_net": "pooled mean >0",
+          "anchor_coverage": ">=20 non-overlapping audit anchors across >=4 held-out sessions",
+          "only_region": "combined primary prediction > max(0, training q95)",
+          "stress": "Mandatory descriptive report, NOT a classification gate; never substitute stress/base or select another tail after results.",
+          "tail_base_net": "pooled mean >0 AND mean >0 in >=5 of 7 held-out sessions; missing session tail counts as nonpositive",
+          "tail_coverage": ">=100 total held-out rows; >=20 rows in each of >=5 held-out sessions"
+        },
+        "information_gate_all_required": {
+          "combined_MSE": "< L2_MSE AND < constant_baseline_MSE",
+          "combined_minus_l2_pooled_spearman": ">0",
+          "combined_pooled_spearman": ">0",
+          "combined_shift_p": "<0.05",
+          "incremental_shift_p": "<0.05",
+          "positive_combined_minus_l2_session_spearman": ">=5 of 7",
+          "positive_combined_session_spearman": ">=5 of 7"
+        },
+        "interpretation": "Exactly one discovery label after authorization, never independent strategy validation. TOO_SMALL means insufficient prespecified after-cost evidence, including insufficient tail/anchor coverage; report which gates fail. No best-bin or shorter-horizon promotion.",
+        "ordered_decision": [
+          "Any integrity/provenance/required-statistic failure => INTEGRITY_FAILURE, no research classification.",
+          "Information gate false => NO_STABLE_COMBINED_SIGNAL.",
+          "Information gate true and economic gate false => INFORMATION_PRESENT_BUT_TOO_SMALL.",
+          "Both gates true => ECONOMIC_SIGNAL_PRESENT."
+        ],
+        "primary_horizon_seconds": 300
+      },
+      "economics": {
+        "arithmetic": "Decimal, isolated precision 50, ROUND_HALF_EVEN for financial features/returns/costs; convert once to binary64 at model/statistics boundary.",
+        "capacity": "No order quantity, position schedule or fill simulation. Quote-side unit-price diagnostic is an optimistic infinitesimal-liquidity bound, not a top-of-book full-fill assumption. Historical exchangeInfo/causal admission inputs are absent; do not invent filters or retrospectively fetch replacements.",
+        "decision_to_quote_latency_ms": 100,
+        "depth_slippage": "NOT_ESTIMATED, never zero-filled as proven capacity. Future separately preregistered sized research must use depth sweeps, quantity/notional constraints and FULL_FILL_OR_REJECT with causal provenance.",
+        "no_double_counting": "Spread is embedded in bid/ask gross; 24/48 bps are cost context, not extra deductions after exact accounting.",
+        "prices": "At entry/exit quote times let a=ask_entry, b=bid_exit, me=entry_mid, mx=exit_mid; s=slippage_bps/10000, f=fee_bps/10000; A=a*(1+s), B=b*(1-s). No tick rounding.",
+        "reference_round_trip_bps": {
+          "base": "24",
+          "stress": "48"
+        },
+        "returns_bps": "mid_move=10000*(mx-me)/A; executable_gross=10000*(b-a)/A; spread=10000*((a-me)+(mx-b))/A; adverse=10000*((A-a)+(b-B))/A; fees=10000*f*(A+B)/A; net=10000*(B-A-f*(A+B))/A = mid_move-spread-adverse-fees.",
+        "scenarios": {
+          "base": {
+            "additional_adverse_slippage_bps_per_side": "2",
+            "fee_bps_per_side": "10"
+          },
+          "stress": {
+            "additional_adverse_slippage_bps_per_side": "4",
+            "fee_bps_per_side": "20"
+          }
+        },
+        "unadjusted_quote_return_bps": "10000*(b/a-1), separately labelled; do not mix denominators with cost decomposition."
+      },
+      "evidence": {
+        "blind_holdout": "LOCKED; no access",
+        "consumed_v9": "EXCLUDED",
+        "consumption": "All eight sessions become CONSUMED discovery evidence when authorized outcome analysis starts; never fresh strategy confirmation.",
+        "independent_confirmatory_strategy_validation": false,
+        "outcomes_examined_for_this_protocol": false,
+        "role": "DISCOVERY_ONLY",
+        "scope": "Information and quote-price economic magnitude; NOT a strategy, profitability or deployability test."
+      },
+      "features": {
+        "combined_order": [
+          "spread_bps",
+          "microprice_minus_mid_bps",
+          "depth_imbalance_1",
+          "depth_imbalance_5",
+          "depth_imbalance_10",
+          "depth_imbalance_20",
+          "bid_depth_concentration_top1_over_top20",
+          "ask_depth_concentration_top1_over_top20",
+          "bid_depth_added_1s",
+          "bid_depth_removed_1s",
+          "ask_depth_added_1s",
+          "ask_depth_removed_1s",
+          "update_intensity_1s",
+          "signed_quantity_1s",
+          "buy_count_1s",
+          "sell_count_1s",
+          "buy_quantity_1s",
+          "sell_quantity_1s",
+          "signed_notional_1s",
+          "quantity_flow_imbalance_1s",
+          "signed_quantity_5s",
+          "buy_count_5s",
+          "sell_count_5s",
+          "buy_quantity_5s",
+          "sell_quantity_5s",
+          "signed_notional_5s",
+          "quantity_flow_imbalance_5s",
+          "signed_quantity_30s",
+          "buy_count_30s",
+          "sell_count_30s",
+          "buy_quantity_30s",
+          "sell_quantity_30s",
+          "signed_notional_30s",
+          "quantity_flow_imbalance_30s",
+          "depth_imbalance_20_x_flow_imbalance_1s",
+          "microprice_minus_mid_bps_x_flow_imbalance_1s",
+          "depth_imbalance_20_x_flow_imbalance_5s",
+          "microprice_minus_mid_bps_x_flow_imbalance_5s",
+          "depth_imbalance_20_x_flow_imbalance_30s",
+          "microprice_minus_mid_bps_x_flow_imbalance_30s"
+        ],
+        "depth_flow": "Reuse event_flow_features before each successfully applied diff. Sum bid/ask quantity added/removed over (T-1s,T]; update_intensity=sum(len(b)+len(a)) per one second. Ignore stale diffs; snapshot contents are not added flow; buffered effects become available only at bridge receipt.",
+        "depth_flow_limits": "Changes describe the retained reconstructed book, not identified cancellations or executed volume; no execution/cancel attribution inferred.",
+        "empty_window": "A complete observed window with zero trades gives all seven flow features zero; incomplete/unavailable windows are missing, not zero.",
+        "flow_formulas": "Per receive-time window: buy/sell counts and sum(q); signed_quantity=buy_quantity-sell_quantity; signed_notional=sum(sign*p*q); quantity_flow_imbalance=signed_quantity/(buy_quantity+sell_quantity).",
+        "flow_windows_seconds": [
+          1,
+          5,
+          30
+        ],
+        "forbidden": "No standalone absolute book-depth predictor (depth sums are intermediate inputs to imbalance/concentration only), lagged return, calendar/session-ID, volatility, candle, derivatives, extra flow window, unlisted nonlinear transform, feature selection or post-outcome family.",
+        "interaction": "Exactly six products: depth_imbalance_20(T) or microprice_minus_mid_bps(T), each times quantity_flow_imbalance_w(T), w=1,5,30. Missing operand => missing product.",
+        "l2_only_order": [
+          "spread_bps",
+          "microprice_minus_mid_bps",
+          "depth_imbalance_1",
+          "depth_imbalance_5",
+          "depth_imbalance_10",
+          "depth_imbalance_20",
+          "bid_depth_concentration_top1_over_top20",
+          "ask_depth_concentration_top1_over_top20",
+          "bid_depth_added_1s",
+          "bid_depth_removed_1s",
+          "ask_depth_added_1s",
+          "ask_depth_removed_1s",
+          "update_intensity_1s"
+        ],
+        "l2_state": "Reuse orderbook.features.state_features at latest causal state: spread=10000*(ask-bid)/mid; microprice=(ask*bid_qty+bid*ask_qty)/(bid_qty+ask_qty); displacement=10000*(microprice-mid)/mid; imbalance_N=(bid_depth_N-ask_depth_N)/(bid_depth_N+ask_depth_N); concentration=top1/top20. Depth is base quantity.",
+        "levels": [
+          1,
+          5,
+          10,
+          20
+        ],
+        "trade_count": "Count accepted unique aggTrade records, not underlying constituent trades; deterministic duplicate suppression from acquisition replay.",
+        "trade_sign": "Exact boolean buyer_is_maker m=false => taker BUY sign +1; m=true => taker SELL sign -1. No sign reversal."
+      },
+      "model": {
+        "alpha": "1.0",
+        "baseline": "constant mean of training targets, on identical held-out rows",
+        "family": "Ridge",
+        "fit_intercept": true,
+        "folds": [
+          {
+            "test_session_index": 2,
+            "train_session_indices": [
+              1
+            ]
+          },
+          {
+            "test_session_index": 3,
+            "train_session_indices": [
+              1,
+              2
+            ]
+          },
+          {
+            "test_session_index": 4,
+            "train_session_indices": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "test_session_index": 5,
+            "train_session_indices": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "test_session_index": 6,
+            "train_session_indices": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          {
+            "test_session_index": 7,
+            "train_session_indices": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "test_session_index": 8,
+            "train_session_indices": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          }
+        ],
+        "forbidden": "No model/hyperparameter search, sign reversal, clipping, feature selection, early stopping, secondary rescue or neural networks.",
+        "objective": "sum((y-intercept-X*beta)^2) + 1.0*sum(beta^2); intercept not penalized",
+        "ordering": "Frozen chronological sessions 1..8; within-session T ascending; expanding training, each later whole session tested once, no random row split.",
+        "paired": "Both models use identical folds, common row mask, targets and baseline; fit separately for each of the four frozen horizons. Only 300s classifies.",
+        "preprocessing": "Each fold/model: training-only median per feature; fail all-missing training feature; impute held-out from same medians; train-only means/population standard deviations after imputation. Zero training scale => transformed column zero for train and test.",
+        "reference": "Use pure prepare_fold/fit_prepared_fold primitives in src/diagnostics/v8_derivatives_discovery.py, with explicit all-missing/nonfinite guards. Reusing statistical primitives does not reopen V8 research or load its data.",
+        "weights": "unweighted training rows; report pooled and equal-weight session metrics; no reweighting or sample balancing"
+      },
+      "report": {
+        "location": "ignored reports/v10_microstructure_economic_discovery/<preregistration_id>/; immutable exclusive-create ledger and report, never overwrite historical evidence",
+        "precision": "Apply gates to unrounded computed values, never displayed rounding. Empty descriptive buckets/tails have count zero and null means/medians/win rates; insufficient economic coverage fails that gate, not integrity. Undefined required primary correlations or null statistics fail integrity.",
+        "required": "Every horizon/model/fold and every frozen bin/threshold, including negative/empty results; exclusions; gate booleans; one primary label; causal endpoint timestamps; source/runtime versions; manifest/input/prediction/null-statistic/report hashes.",
+        "trading_limitations": "No depth capacity, live exchange admission, queue priority, passive/maker fill, inventory/risk, capital, impact, fee-asset discount, or trading profitability claim. Later sized trading research requires new preregistration and genuinely new prospective sessions."
+      },
+      "response": {
+        "bucket_thresholds": "For each observed fold/model/horizon derive those quantiles from fitted TRAINING predictions only; freeze before test. Seven disjoint buckets (-inf,q50],(q50,q75],...,(q99,+inf); equal edges produce empty bins, never merge adaptively.",
+        "clustering": "Use half-open five-minute bins [session_start+300k,session_start+300(k+1)); include zero-count bins wholly within requested session coverage. Report threshold run-onset counts and population variance/mean (Fano), null if mean zero. No adaptive clustering.",
+        "economic_audit_anchors": "Only combined 300s positive q95 tail: take each run's first T, greedily retain in time order when T>=previous_retained_T+300s+100ms; reset per session. This de-overlaps diagnostic intervals, not an executable strategy schedule; no optimized rearm/cooldown/holding rule.",
+        "economic_thresholds_bps": [
+          "12",
+          "24",
+          "36",
+          "48"
+        ],
+        "estimator": "sorted values, linear interpolation at (n-1)*q (type 7); report pooled OOS prediction quantiles as descriptive distribution only",
+        "exceedance": "Report count/fraction prediction>each fixed threshold for each horizon/model; no other economic thresholds.",
+        "horizon_comparison": "On common OOS rows report 300s minus 5/30/60s Spearman, mean/quantile prediction scale and frozen-tail net response. Material economic-scale increase descriptive flag iff 300s q95 mean base-net minus 30s q95 mean base-net >=12bps (each horizon's own frozen train thresholds). No secondary classification rescue.",
+        "metrics_each_bucket_or_tail": [
+          "count",
+          "session counts",
+          "mean prediction bps",
+          "mean realized mid bps",
+          "median realized mid bps",
+          "mid win rate y>0",
+          "mean executable gross bps",
+          "mean and median base net bps",
+          "mean and median stress net bps",
+          "base/stress positive-net fractions",
+          "spread/fee/slippage decomposition"
+        ],
+        "monotonicity": "Pooled realized mid means across the seven ordered fold-local bins: every adjacent difference>=0 and at least one>0. Also report Spearman(bin_index,bin_mean), per-session means and counts. Empty bin => UNDEFINED; never collapse bins. Descriptive only.",
+        "persistence": "For each fixed threshold and positive quantile tail, maximal consecutive one-second true runs within a test session; missing rows/session boundaries break runs. Duration is count of true observations seconds (singleton=1s). Report run count, mean/median/max duration, inter-onset timestamp gaps within session, and runs per eligible test hour.",
+        "positive_tails": "For each predefined training quantile q report test rows prediction>max(0,q); no fitted or held-out profit optimization.",
+        "quantiles": [
+          "0.50",
+          "0.75",
+          "0.90",
+          "0.95",
+          "0.975",
+          "0.99"
+        ],
+        "rate_denominator": "Eligible test hours for event/turnover rates = common held-out row count/3600; also report nominal held-out session hours separately.",
+        "turnover": "Demand proxy only: every qualifying second => count signals and 2*count quote-side operations, per eligible test hour; maximum simultaneous h-second hypothetical intervals via exact timestamps. No compounded PnL, portfolio, realized trades or invented capital/quantity."
+      },
+      "sampling": {
+        "asof": "latest valid L2 available <= query time; no future nearest lookup, interpolation or repair",
+        "end": "min(closure end, session start + requested 10800s); discard closure overrun",
+        "failure": "Insufficient rows in any session, missing required provenance, invalid book, nonfinite computation or undefined required primary statistic => INTEGRITY_FAILURE; no session/fold dropping.",
+        "features": "Only sources available <= T. Missing feature values remain missing until train-only imputation; no target-derived filters or winsorization.",
+        "frequency_seconds": 1,
+        "freshness": "Both availability age and last applied diff exchange-event age <= 1000ms at each query; preserve both times. No diff provenance means missing, never infer source time from a snapshot.",
+        "grid": "integer UTC seconds T; chronological within session",
+        "maximum_state_age_ms": 1000,
+        "merge": [
+          "receive/availability timestamp",
+          "depth before aggTrade",
+          "source record index"
+        ],
+        "minimum_common_rows_per_session": 1202,
+        "row_mask": "One common mask for both models and all four horizons: valid fresh book at T, at every T+h, T+100ms and T+h+100ms, all in the same session. Missing target endpoints exclude the row, with reason/count; never impute outcomes.",
+        "warmup": "T-30s >= max(session start, first accepted aggTrade receive time, first valid synchronized L2 availability). All windows are (T-w,T]. Initial unobserved stream coverage is missing, not zero. Restart windows at each session/resync; no carry across boundaries.",
+        "warmup_seconds": 30
+      },
+      "statistics": {
+        "metrics": [
+          "sample/fold/session counts",
+          "pooled held-out Spearman",
+          "per-session Spearman",
+          "equal-session mean Spearman",
+          "model and constant-baseline MSE in bps^2",
+          "per-session MSE",
+          "relative MSE improvement 1-model_MSE/baseline_MSE",
+          "combined-minus-L2 Spearman",
+          "L2-minus-combined MSE",
+          "positive session fractions"
+        ],
+        "mse": "mean((actual-predicted)^2) across all held-out rows, not an unweighted mean of fold MSE; baseline predictions are their respective fold's training-target mean. Relative MSE improvement is null if baseline MSE is zero.",
+        "null": {
+          "generator": "Python 3.12 random.Random(seed), MT19937; one generator, permutation index then chronological session order",
+          "limitations": "Overlapping targets are not IID. Circular shifts preserve ordered dependence except wrap boundary and irregular missing-row spacing; no IID t-test, row bootstrap or profitability confidence claim.",
+          "offset": "For each session of n common rows draw randrange(601,n-600); require min(offset,n-offset)>600. Rotate y'[j]=y[(j+offset)%n]. Same shifted targets for L2 and combined; features/time indices stay fixed.",
+          "p_value": "(1 + count(null_stat >= observed_stat))/1001, one-sided positive; exactly 1000 finite statistics for each, no discarded/redrawn permutations",
+          "primary_only": true,
+          "refit": "Refit both models in all seven folds for every permutation, including shifted training-target means. Cached feature-only train preprocessing/Gram matrices allowed, no reused fitted coefficients.",
+          "seed": 20260916,
+          "statistics": [
+            "combined pooled Spearman",
+            "combined pooled Spearman minus L2 pooled Spearman"
+          ],
+          "valid_permutations": 1000
+        },
+        "spearman": "Pearson of pooled average ranks (ties averaged); per-session ranks calculated within that session; no absolute values/sign selection."
+      },
+      "targets": {
+        "horizons_seconds": [
+          5,
+          30,
+          60,
+          300
+        ],
+        "model_target_bps": "10000*(mid(T+h)/mid(T)-1); simple return, not log return",
+        "primary_seconds": 300,
+        "quote_price_target": "LONG buy ask at T+100ms, sell bid at T+h+100ms; latest causal fresh state at each endpoint, same session only.",
+        "supporting_can_change_classification": false,
+        "supporting_seconds": [
+          5,
+          30,
+          60
+        ]
+      }
+    }
+  },
+  "definition_sha256": "a296e5ed304640d706916cc8e562cedc6febf561b20b0c8a99d59ac30b275a33",
+  "preregistration_id": "a296e5ed304640d7"
+}
