@@ -168,11 +168,25 @@ V8 derivatives context:
 - derivatives branch CLOSED
 
 V9:
-- prospective BTCUSDC Spot L2 order-book research
+- prospective BTCUSDC Spot L2 information discovery completed
+- classification: STABLE_L2_INFORMATION
+- V9 data is CONSUMED research evidence, not fresh independent validation
 - public REST snapshot + WebSocket diff-depth collector validated
 - deterministic local order-book reconstruction validated
 - deterministic L2 feature extraction validated
-- no validated V9 trading edge yet
+- standalone short-horizon taker economics were insufficient to justify a trading strategy
+- no validated profitable trading strategy
+
+V10:
+- cost-aware and depth-aware execution research foundation exists
+- public Spot L2 + aggTrade collector exists
+- acquisition protocol 8326791b411c27b5: dataset READY, 8 sessions / 24 hours / 4 UTC start dates
+- economic discovery protocol a296e5ed304640d7 is frozen
+- executor implemented; real execution NOT AUTHORIZED and NOT executed
+- next step: pre-execution verification, then one separately and explicitly authorized discovery run
+- a positive discovery classification would NOT establish a profitable strategy
+- later confirmatory strategy validation requires genuinely new prospective data
+- sequence: DISCOVERY -> future prospective strategy validation -> paper/shadow -> live only if justified
 
 Do not reopen a CLOSED research branch without explicit justification.
 
