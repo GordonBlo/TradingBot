@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Market](https://img.shields.io/badge/Market-BTCUSDC%20Spot-F0B90B?logo=binance&logoColor=black)
 ![Mode](https://img.shields.io/badge/Execution-Shadow%20Only-success)
-![Tests](https://img.shields.io/badge/Tests-1124%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-1126%20passed-brightgreen)
 
 Research-grade crypto trading platform focused on **causal backtesting, reproducible quantitative research, market microstructure and safe live-market execution infrastructure**.
 
@@ -11,9 +11,9 @@ Research-grade crypto trading platform focused on **causal backtesting, reproduc
 **Timeframe:** 15m  
 **Direction:** Long-only
 
-> **Current status:** V9 information discovery completed; V10 acquisition is READY.
-> The frozen V10 economic discovery executor is implemented, **NOT AUTHORIZED and NOT executed**.
-> Public-market observation and shadow infrastructure exist; no V10 strategy has passed paper/shadow or live validation. Real-money orders remain disabled. No validated profitable strategy is claimed.
+> **Current status:** V10 combined L2 + aggTrade 300s economic discovery completed: **NO_STABLE_COMBINED_SIGNAL; research branch CLOSED**.
+> V9 and V10 discovery data are **CONSUMED**, never fresh independent validation. The blind holdout remains **LOCKED**.
+> No advancement of this V10 hypothesis to strategy validation, paper trading, or live trading. Real-money orders remain disabled; no profitable strategy has been validated.
 
 ---
 
@@ -118,8 +118,8 @@ The project deliberately separates data collection, research, simulation and liv
 | V8 derivatives context | Independent validation failed; CLOSED |
 | V9 Spot L2 information discovery | Completed: STABLE_L2_INFORMATION; evidence CONSUMED; standalone short-horizon taker economics insufficient |
 | V10 execution research foundation | Cost-aware and depth-aware offline simulation; public L2 + aggTrade collector implemented |
-| V10 acquisition | READY: 8 eligible sessions / 24 hours / 4 UTC start dates |
-| V10 economic discovery | Frozen protocol; executor implemented; NOT AUTHORIZED / NOT executed |
+| V10 acquisition | 8 eligible sessions / 24 hours / 4 UTC start dates; now CONSUMED discovery evidence |
+| V10 economic discovery | Completed: NO_STABLE_COMBINED_SIGNAL; forensic audit PASS; CLOSED |
 
 Failed hypotheses remain part of the project history instead of being hidden or post-hoc optimized.
 
@@ -144,27 +144,15 @@ The experiment used:
 
 This information classification does not establish trading profitability.
 
-## V10 — Execution Foundation and Frozen Economic Discovery
+## V10 — Completed Economic Discovery; Research Branch Closed
 
 The [depth-aware execution foundation](docs/v10_l2_execution.md) provides causal offline depth sweeps, explicit fill policies, exchange constraints and Decimal cost accounting. The [public collector](docs/v10_public_microstructure_collector.md) persists synchronized Spot L2 and aggTrades without authentication or orders.
 
-Acquisition preregistration `8326791b411c27b5` has a READY dataset of **8 eligible closed sessions, 24 hours and 4 UTC start dates**. Economic discovery preregistration `a296e5ed304640d7` binds exactly those sessions. Its definition SHA-256 is `a296e5ed304640d706916cc8e562cedc6febf561b20b0c8a99d59ac30b275a33`.
+Economic discovery preregistration `a296e5ed304640d7` completed its single authorized run on **2026-09-23**, using exactly **8 sessions / 24 hours / 4 UTC start dates** from acquisition protocol `8326791b411c27b5`. The result is **SEALED: NO_STABLE_COMBINED_SIGNAL**. The read-only forensic audit passed with no invalidating issue identified.
 
-The [economic discovery protocol](docs/v10_microstructure_economic_discovery.md) is frozen and its [executor](docs/v10_economic_executor.md) is implemented. Real discovery remains **NOT AUTHORIZED and NOT executed**; no authorization, reservation or result exists. The next step is pre-execution verification followed by one separately, explicitly authorized discovery run. A reservation permanently prevents a second outcome run, including after interruption.
+All seven information gates failed: the combined L2 + aggTrade signal did not improve on L2-only. Tail and non-overlapping anchor coverage passed, but both base-net economic gates failed. The [immutable closure record](research/v10_microstructure_economic_discovery/a296e5ed304640d7/synthesis.json) binds the frozen definition and sealed report hashes and records the failed gates.
 
-The protocol compares frozen L2-only and combined L2/flow models and quote-price economic magnitude. Even `ECONOMIC_SIGNAL_PRESENT` would be **discovery only**, not a profitable strategy or V10 strategy validation. It does not establish sized depth capacity, actual fills, impact, inventory/risk management or deployability; depth slippage is `NOT_ESTIMATED`. Discovery consumes all eight sessions. Any later confirmatory strategy experiment requires a new preregistration and genuinely new prospective data.
-
-Run the read-only audit from `C:\Coding\TradingBot` using **Python 3.12 exactly**:
-
-```powershell
-.\.venv\Scripts\python.exe -B -m src.cli.audit_v10_preexecution
-```
-
-The audit emits JSON and exits 0 for PASS or 1 for FAIL. It checks the expected repository/branch, a clean Git worktree, frozen manifests and source hashes, all bound artifacts, fresh acquisition replay/readiness, absent authorization/reservation, executor/runtime identity and free disk space. A dirty worktree always fails, while allowing read-only integrity checks to complete; there is no bypass flag. It never constructs predictive targets, fits models, runs permutations, places orders or consumes the dataset. It does not read the blind holdout. Fresh acquisition replay uses the existing scanner with at most four workers and can take substantial time across 24 hours of data; the JSON result is emitted only after completion.
-
-The operational disk minimum is **10 GiB free** for at most 86,400 sample rows, 40 features, four horizons, 1,000 null statistics and report overhead. This conservative reserve is separate from frozen research rules and does not guarantee future storage availability. The report records actual free bytes before and after verification. JSON may be redirected to an ignored `reports/audits/` path, never the real discovery output directory. A PASS is a point-in-time pre-authorization check, not permission to execute; rerun immediately before any future authorization.
-
-Local audit on **2026-09-22**: fresh acquisition **READY (8 sessions / 24 hours / 4 UTC dates)**; frozen manifests, artifact/reference hashes, executor/runtime identity and final integrity checks passed. Free disk space after verification was **373.28 GiB**. Overall result: **FAIL solely because the worktree contains uncommitted changes**. Authorization and discovery reservation/result remain absent. The ignored diagnostic report is `reports/audits/v10_preexecution/audit.json`.
+This frozen economic discovery hypothesis is **CLOSED**, with **no advancement to strategy validation, paper trading, or live trading**. All eight sessions are **CONSUMED discovery evidence** and must never be reused as fresh validation. The blind holdout remains **LOCKED**; no profitable strategy has been validated. The frozen [protocol](docs/v10_microstructure_economic_discovery.md), [executor](docs/v10_economic_executor.md), authorization, reservation and sealed results remain historical evidence; the one-time execution opportunity is consumed.
 
 ---
 
@@ -295,8 +283,9 @@ The project contains an extensive deterministic automated test suite covering:
 - zero-order guarantees
 - V10 acquisition, frozen economic-discovery binding and synthetic executor checks
 - read-only pre-execution readiness and refusal gates
+- immutable V10 closure bindings and consumed-data / no-advancement status
 
-Full suite on **2026-09-22**, Python **3.12.14**: **1,124 passed** in 186.64 seconds. The 26 focused pre-execution audit tests passed first. Both runs used fresh Windows basetemp directories and `-p no:cacheprovider`; the sole warning is the existing `cache_dir` configuration being unknown while that provider is disabled. The generated full-suite log is ignored at `reports/audits/v10_preexecution/full_pytest.log`.
+Full suite on **2026-09-23**, Python **3.12.14**: **1,126 passed** in 172.67 seconds. The 3 focused closure and CLI tests passed first. Both runs used fresh Windows basetemp directories and `-p no:cacheprovider`; the sole warning is the existing `cache_dir` configuration being unknown while that provider is disabled. Synthetic executor/model tests use test fixtures; real V10 discovery was not rerun. The generated full-suite log is ignored under `.pytest_runtime/v10_closure_full_*/pytest.log`.
 
 ---
 
@@ -305,25 +294,16 @@ Full suite on **2026-09-22**, Python **3.12.14**: **1,124 passed** in 186.64 sec
 ```text
 V9 Information Discovery COMPLETED / CONSUMED
         ↓
-V10 Acquisition READY / Economic Protocol FROZEN
+V10 Economic Discovery COMPLETED / SEALED / CONSUMED
         ↓
-Pre-execution Verification
+NO_STABLE_COMBINED_SIGNAL / Forensic Audit PASS
         ↓
-One Explicitly Authorized DISCOVERY Run (NOT AUTHORIZED)
-        ↓
-Future Preregistered Strategy + NEW Prospective Validation
-        ↓
-Paper / Shadow Strategy Validation
-        ↓
-Execution + Risk Engine
-        ↓
-Controlled Test Execution
-        ↓
-Small-capital live validation only if justified
+V10 Economic Discovery Hypothesis CLOSED
+No advancement to strategy validation, paper trading or live trading
 ```
 
 Real-money execution will not be enabled solely because a historical backtest performs well.
-Existing shadow runtime infrastructure does not imply a validated V10 strategy or completed paper trading. Every future stage depends on sufficient evidence and separate authorization for live execution.
+Existing shadow runtime infrastructure does not imply a validated V10 strategy or completed paper trading. Consumed discovery data must never be presented as fresh validation.
 
 ---
 

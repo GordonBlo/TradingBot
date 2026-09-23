@@ -1,0 +1,53 @@
+{
+  "advancement": {
+    "live_trading": false,
+    "paper_trading": false,
+    "strategy_validation": false
+  },
+  "artifact_type": "V10_IMMUTABLE_ECONOMIC_DISCOVERY_CLOSURE",
+  "blind_holdout": {
+    "accessed_for_closure": false,
+    "status": "LOCKED"
+  },
+  "closed_at_utc": "2026-09-23T11:54:10.806742Z",
+  "closure_operations": {
+    "model_refitting": false,
+    "permutation_rerun": false,
+    "predictive_recomputation": false,
+    "rescue_analysis": false
+  },
+  "dataset_status": "CONSUMED_DISCOVERY_EVIDENCE",
+  "definition_sha256": "a296e5ed304640d706916cc8e562cedc6febf561b20b0c8a99d59ac30b275a33",
+  "economic_gates": {
+    "anchor_base_net": false,
+    "anchor_coverage": true,
+    "tail_base_net": false,
+    "tail_coverage": true
+  },
+  "evidence_role": "DISCOVERY_ONLY",
+  "final_classification": "NO_STABLE_COMBINED_SIGNAL",
+  "finding": "All seven information gates failed. The combined L2 + aggTrade signal did not improve on L2-only. Tail and anchor coverage passed; both base-net gates failed.",
+  "forensic_audit": {
+    "basis": "Completed read-only forensic audit confirmed by the user.",
+    "invalidating_issue_identified": false,
+    "verdict": "PASS"
+  },
+  "historical_record_policy": "Immutable closure record. Preserve the failed result; do not reinterpret consumed data as fresh validation or reopen this hypothesis without explicit justification.",
+  "hypothesis_status": "CLOSED",
+  "information_gates": {
+    "combined_MSE": false,
+    "combined_minus_l2_pooled_spearman": false,
+    "combined_pooled_spearman": false,
+    "combined_shift_p": false,
+    "incremental_shift_p": false,
+    "positive_combined_minus_l2_session_spearman": false,
+    "positive_combined_session_spearman": false
+  },
+  "preregistration_id": "a296e5ed304640d7",
+  "profitable_strategy_validated": false,
+  "reuse_as_fresh_validation_permitted": false,
+  "schema_version": 1,
+  "scope": "Frozen combined L2 + aggTrade 300s economic discovery hypothesis; not a closure of the reusable collection or execution infrastructure.",
+  "sealed_report_path": "reports/v10_microstructure_economic_discovery/a296e5ed304640d7/report.json",
+  "sealed_report_sha256": "727333c40cc7fe385222cc0728383c5a7f16bbd3cf720acc478b6fc4155c6c84"
+}

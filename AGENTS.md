@@ -180,13 +180,18 @@ V9:
 V10:
 - cost-aware and depth-aware execution research foundation exists
 - public Spot L2 + aggTrade collector exists
-- acquisition protocol 8326791b411c27b5: dataset READY, 8 sessions / 24 hours / 4 UTC start dates
-- economic discovery protocol a296e5ed304640d7 is frozen
-- executor implemented; real execution NOT AUTHORIZED and NOT executed
-- next step: pre-execution verification, then one separately and explicitly authorized discovery run
-- a positive discovery classification would NOT establish a profitable strategy
-- later confirmatory strategy validation requires genuinely new prospective data
-- sequence: DISCOVERY -> future prospective strategy validation -> paper/shadow -> live only if justified
+- combined L2 + aggTrade 300s economic discovery completed and SEALED
+- preregistration: a296e5ed304640d7; classification: NO_STABLE_COMBINED_SIGNAL
+- forensic audit PASS; no INVALIDATING_ISSUE identified
+- all 7 information gates failed; combined signal did not improve on L2-only
+- tail and anchor coverage passed; tail base-net and anchor base-net failed
+- this economic discovery hypothesis / research branch is CLOSED
+- acquisition protocol 8326791b411c27b5 supplied 8 sessions / 24 hours / 4 UTC start dates
+- V10 discovery data is CONSUMED and must never be reused as fresh validation
+- blind holdout remains LOCKED
+- no advancement of this hypothesis to strategy validation, paper trading, or live trading
+- no profitable strategy has been validated
+- immutable closure: research/v10_microstructure_economic_discovery/a296e5ed304640d7/synthesis.json
 
 Do not reopen a CLOSED research branch without explicit justification.
 

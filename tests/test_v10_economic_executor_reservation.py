@@ -322,7 +322,10 @@ def test_nonfinite_report_cannot_be_serialized():
         execution.encoded({"statistic": float("nan")})
 
 
-def test_no_cli_execution_surface_or_authorization_artifact_created():
+def test_no_cli_execution_surface_or_authorization_artifact_created(tmp_path, monkeypatch):
+    # Existing real authorization/results are historical evidence, not test fixtures.
+    monkeypatch.setattr(execution, "AUTHORIZATION", tmp_path / "authorization.json")
+    monkeypatch.setattr(execution, "REPORT_DIRECTORY", tmp_path / "discovery")
     from src.cli.run_v10_economic_discovery import build_parser
 
     for mode in ("RUN", "EXECUTE", "EVALUATE"):
