@@ -1,0 +1,166 @@
+{
+  "evidence_status": "CONSUMED",
+  "identity": {
+    "float_mant_dig": 53,
+    "git_head": "e0e0f64bbeacc60d85f74331ef48bc3d62490eeb",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "source_sha256": {
+      "src/diagnostics/v8_derivatives_discovery.py": "c1ba00123c690245fa3dd9dd978dc7c5192939fa9d81e5a605f9033749e81286",
+      "src/diagnostics/v9_l2_early_information.py": "e97df1c19542768c1faa87d096336ade76513606d68aabf0380507a489754ab9",
+      "src/research/v11_score.py": "995ba2b64160741173e38e66bdc8b673a87b5a6f76babeb5475f15122f331c9c",
+      "src/research/v9_l2_early_information_preregistration_v2.py": "b798685bf10d820ca57216a65fa0d1ecbdefc72cd95f1d2fdf3614ad738848bd",
+      "src/research/v9_l2_readiness.py": "602fdc3fd1968e75235c30598069f4145df63c0a7d01443b98ed63e2932bc911"
+    }
+  },
+  "manifest_sha256": "f6dd3d95ec595c8d2c9d6f9aca104a963341de21c910af358009fd27fffa6db1",
+  "report_sha256": "298a57f5a5fc01f1fd896ebe338906d6c121baf499d04bca73c06cda9f5bc9c2",
+  "sessions": [
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/09/20260909T201433780784Z.summary.json",
+        "closure_summary_sha256": "65ed7979a4fb1d62d47c49e21efaa0fd5c439ce9ad5b23964439e29b2548766c",
+        "features_1s": "data/orderbook/v9/features/20260909T201433780784Z/features_1s.csv",
+        "features_1s_sha256": "d93fb740e4a42ea0bbdc86173c68149a54c35b07a9fd237a16b60e3eaf0ba650",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/09/20260909T201433780784Z.jsonl",
+        "raw_sha256": "7ff5e24bf44361e02ec9f5f89ef380bbda86263ab2958a8da4fc2da3ee3e1ddf",
+        "session_id": "20260909T201433780784Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.0013906805555557,
+      "ended_at_utc": "2026-09-09T23:14:38.787234+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260909T201433780784Z",
+      "started_at_utc": "2026-09-09T20:14:33.780784+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/09/20260909T232056192720Z.summary.json",
+        "closure_summary_sha256": "700ee091120f09da541d0d80d68a45732de45285ef1ae083bcb9f456d26d769e",
+        "features_1s": "data/orderbook/v9/features/20260909T232056192720Z/features_1s.csv",
+        "features_1s_sha256": "bdf7770e0576418fa6444295fb15881b1651beab509e298796264145f02a7119",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/09/20260909T232056192720Z.jsonl",
+        "raw_sha256": "bb904ec4781deeadf8366efcc199872396b0a60f4626c966a0628381e268e3b7",
+        "session_id": "20260909T232056192720Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.001391366388889,
+      "ended_at_utc": "2026-09-10T02:21:01.201639+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260909T232056192720Z",
+      "started_at_utc": "2026-09-09T23:20:56.192720+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T022450349042Z.summary.json",
+        "closure_summary_sha256": "cd466b9264de3de6c8317bc3819e5494ae5b4e35892db0313dbb803ff27ccb50",
+        "features_1s": "data/orderbook/v9/features/20260910T022450349042Z/features_1s.csv",
+        "features_1s_sha256": "610614c7851eb9f587f1b8dd0da0df22d8e1bc9149e614de680aad4e88bcc487",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T022450349042Z.jsonl",
+        "raw_sha256": "bc67422c69834250ae11c7c75529266d2998edec21e9c76b5b4264a468ef3331",
+        "session_id": "20260910T022450349042Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.001390883611111,
+      "ended_at_utc": "2026-09-10T05:24:55.356223+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260910T022450349042Z",
+      "started_at_utc": "2026-09-10T02:24:50.349042+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T053020260196Z.summary.json",
+        "closure_summary_sha256": "ae829749379c5d85afe9de59973dabacdfe98bcc5f0ed32ad6c6502e0534a9ca",
+        "features_1s": "data/orderbook/v9/features/20260910T053020260196Z/features_1s.csv",
+        "features_1s_sha256": "07e8b9fd6df54f43ccd6f4dc23b43f1dbd81e18100ba841885ad382b97b3c33d",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T053020260196Z.jsonl",
+        "raw_sha256": "1cad6f9cc99e5d8facdead4009b044ec7995948755feaa5713ee3434c749c5da",
+        "session_id": "20260910T053020260196Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.0013896933333335,
+      "ended_at_utc": "2026-09-10T08:30:25.263092+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260910T053020260196Z",
+      "started_at_utc": "2026-09-10T05:30:20.260196+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T151806065017Z.summary.json",
+        "closure_summary_sha256": "cedae34775bf5dc4a9f39942658ccce5d94660413562ac99f525151b6da1977f",
+        "features_1s": "data/orderbook/v9/features/20260910T151806065017Z/features_1s.csv",
+        "features_1s_sha256": "588504676a2b2af0e6235b28d2e129023b9bcb66b424e5ecc12334520432aa85",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T151806065017Z.jsonl",
+        "raw_sha256": "8ccce975c15c9354b6068b145fa44266eae2fc21a875926e2c2b7220a4f6936b",
+        "session_id": "20260910T151806065017Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.001390704166667,
+      "ended_at_utc": "2026-09-10T18:18:11.071552+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260910T151806065017Z",
+      "started_at_utc": "2026-09-10T15:18:06.065017+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T182431650806Z.summary.json",
+        "closure_summary_sha256": "46f8e94980f940ebcc5314ccd377f865f6f468603ce68a3519d817493383e6fa",
+        "features_1s": "data/orderbook/v9/features/20260910T182431650806Z/features_1s.csv",
+        "features_1s_sha256": "d1175897b06fc42b99da2e546b3da124fed305ee82b64544c51a84d6474ba6e5",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T182431650806Z.jsonl",
+        "raw_sha256": "f98ea1f5d82285ce69e04ad06358ada4be2415f72534408332c14d6892f9bae7",
+        "session_id": "20260910T182431650806Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.0013905522222224,
+      "ended_at_utc": "2026-09-10T21:24:36.656794+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260910T182431650806Z",
+      "started_at_utc": "2026-09-10T18:24:31.650806+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T212857369885Z.summary.json",
+        "closure_summary_sha256": "9ba8616fc5a0f9f554e6e81b46069c53ab3d3d19609d04a026e11fb188e3b4be",
+        "features_1s": "data/orderbook/v9/features/20260910T212857369885Z/features_1s.csv",
+        "features_1s_sha256": "63001192b6afaf95d30f3528a87072f1434ccad779fd2be16b7f66936f885c60",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/10/20260910T212857369885Z.jsonl",
+        "raw_sha256": "9289aaa505d32ea6c104d55f885dc866a8a727be090c7c18085fb3b23315f8df",
+        "session_id": "20260910T212857369885Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.0013909602777775,
+      "ended_at_utc": "2026-09-11T00:29:02.377342+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260910T212857369885Z",
+      "started_at_utc": "2026-09-10T21:28:57.369885+00:00"
+    },
+    {
+      "artifact_binding": {
+        "closure_summary": "data/orderbook/v9/BTCUSDC/2026/09/11/20260911T003526266420Z.summary.json",
+        "closure_summary_sha256": "eae77cdd4372608b941a576c6048445d3bf7cdebd66b6f9b461171984bc3cc45",
+        "features_1s": "data/orderbook/v9/features/20260911T003526266420Z/features_1s.csv",
+        "features_1s_sha256": "a8e3360be2097ea82128ca8438eb97a3b266c4708d039556ca9e9297070c9d11",
+        "raw_event_log": "data/orderbook/v9/BTCUSDC/2026/09/11/20260911T003526266420Z.jsonl",
+        "raw_sha256": "08bcb40f8e463a5a4ace8181fa2eb1b614fc8a0ba6c44cf3b9e02fbede7bc55a",
+        "session_id": "20260911T003526266420Z"
+      },
+      "classification": "ELIGIBLE",
+      "duration_hours": 3.001390526388889,
+      "ended_at_utc": "2026-09-11T03:35:31.272315+00:00",
+      "integrity_passed": true,
+      "reason": "EXACT_SEALED_CONSUMED_V9_BINDING",
+      "session_id": "20260911T003526266420Z",
+      "started_at_utc": "2026-09-11T00:35:26.266420+00:00"
+    }
+  ],
+  "v9_id": "853870051677af08"
+}

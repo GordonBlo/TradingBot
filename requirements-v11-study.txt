@@ -1,0 +1,2 @@
+# Optional offline synthetic calibration dependency; frozen score uses stdlib.
+numpy==2.2.6
