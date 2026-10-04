@@ -1,0 +1,324 @@
+{
+  "artifact_type": "V11_SYNTHETIC_METHODOLOGY_RESOLUTION_NOT_PREREGISTRATION",
+  "verdict": "METHODOLOGY_UNRESOLVED",
+  "selected_method": null,
+  "prospective_duration_days": null,
+  "primary_gate_frozen": false,
+  "duration_extension": "NOT_TRIGGERED",
+  "calibration_datasets": 630784,
+  "method_replications": 1892352,
+  "result_cells": 231,
+  "replications_per_cell": 8192,
+  "method_summary": {
+    "CBB_LONG": {
+      "failed_cells": 77,
+      "total_cells": 77,
+      "max_rejection": {
+        "family": "ar56",
+        "profile": 5,
+        "rate": 0.2777777777777778,
+        "retention": 0.5,
+        "rejection": {
+          "count": 1426,
+          "rate": 0.174072265625,
+          "mc95": [
+            0.16591738328931627,
+            0.18245967629502846
+          ],
+          "simultaneous_mc": [
+            0.15595897823920202,
+            0.19326179457545012
+          ]
+        },
+        "batch_rejection_rates": [
+          0.18115234375,
+          0.1708984375,
+          0.1748046875,
+          0.16943359375
+        ]
+      },
+      "min_coverage": {
+        "family": "ar56",
+        "profile": 5,
+        "coverage": {
+          "count": 6760,
+          "rate": 0.8251953125,
+          "mc95": [
+            0.816794563241121,
+            0.8333640596781032
+          ],
+          "simultaneous_mc": [
+            0.8059762209248263,
+            0.8433405887917312
+          ]
+        }
+      },
+      "max_failure": {
+        "family": "ar28_persistent_filter",
+        "profile": 4,
+        "failure": {
+          "count": 193,
+          "rate": 0.0235595703125,
+          "mc95": [
+            0.020384455673673973,
+            0.027079498042181904
+          ],
+          "simultaneous_mc": [
+            0.016833674488262784,
+            0.03186828882881654
+          ]
+        }
+      },
+      "failed_gate_counts": {
+        "size_close": 76,
+        "coverage_close": 77,
+        "failure_low": 1,
+        "draw_stability": 0
+      },
+      "max_split_draw_disagreement": 0.013427734375
+    },
+    "HAC_LONG": {
+      "failed_cells": 76,
+      "total_cells": 77,
+      "max_rejection": {
+        "family": "ar56",
+        "profile": 5,
+        "rate": 0.2777777777777778,
+        "retention": 0.5,
+        "rejection": {
+          "count": 1378,
+          "rate": 0.168212890625,
+          "mc95": [
+            0.16017086750930176,
+            0.1764916537197715
+          ],
+          "simultaneous_mc": [
+            0.1503599036478126,
+            0.1871615329071482
+          ]
+        },
+        "batch_rejection_rates": [
+          0.17138671875,
+          0.169921875,
+          0.1689453125,
+          0.16259765625
+        ]
+      },
+      "min_coverage": {
+        "family": "ar56",
+        "profile": 5,
+        "coverage": {
+          "count": 6814,
+          "rate": 0.831787109375,
+          "mc95": [
+            0.8235083462802285,
+            0.8398291324906982
+          ],
+          "simultaneous_mc": [
+            0.8128384670928518,
+            0.8496400963521874
+          ]
+        }
+      },
+      "max_failure": {
+        "family": "ar28_persistent_filter",
+        "profile": 4,
+        "failure": {
+          "count": 193,
+          "rate": 0.0235595703125,
+          "mc95": [
+            0.020384455673673973,
+            0.027079498042181904
+          ],
+          "simultaneous_mc": [
+            0.016833674488262784,
+            0.03186828882881654
+          ]
+        }
+      },
+      "failed_gate_counts": {
+        "size_close": 76,
+        "coverage_close": 76,
+        "failure_low": 1,
+        "draw_stability": 0
+      },
+      "max_split_draw_disagreement": 0.0
+    },
+    "SELF_NORMALIZED": {
+      "failed_cells": 54,
+      "total_cells": 77,
+      "max_rejection": {
+        "family": "ar56",
+        "profile": 5,
+        "rate": 0.2777777777777778,
+        "retention": 0.5,
+        "rejection": {
+          "count": 842,
+          "rate": 0.102783203125,
+          "mc95": [
+            0.09628828859734895,
+            0.10956218777865645
+          ],
+          "simultaneous_mc": [
+            0.08848557157762105,
+            0.11839388769256354
+          ]
+        },
+        "batch_rejection_rates": [
+          0.1044921875,
+          0.10302734375,
+          0.10302734375,
+          0.1005859375
+        ]
+      },
+      "min_coverage": {
+        "family": "ar56",
+        "profile": 5,
+        "coverage": {
+          "count": 7350,
+          "rate": 0.897216796875,
+          "mc95": [
+            0.8904378122213435,
+            0.903711711402651
+          ],
+          "simultaneous_mc": [
+            0.8816061123074365,
+            0.911514428422379
+          ]
+        }
+      },
+      "max_failure": {
+        "family": "ar28_persistent_filter",
+        "profile": 4,
+        "failure": {
+          "count": 193,
+          "rate": 0.0235595703125,
+          "mc95": [
+            0.020384455673673973,
+            0.027079498042181904
+          ],
+          "simultaneous_mc": [
+            0.016833674488262784,
+            0.03186828882881654
+          ]
+        }
+      },
+      "failed_gate_counts": {
+        "size_close": 54,
+        "coverage_close": 53,
+        "failure_low": 1,
+        "draw_stability": 0
+      },
+      "max_split_draw_disagreement": 0.0
+    }
+  },
+  "binding": {
+    "kind": "SYNTHETIC_METHODOLOGY_ONLY_NOT_V11_PREREGISTRATION",
+    "spec_sha256": "516d347491f1cc81f03cd268625d66993e5d59387ab2bdf32e96ec03fc01516b",
+    "source_sha256": "542464113e6932a96d523d6f6d3a51404c66f0652426c8fc4dba63a5e2b24ec4",
+    "reused_source_sha256": "4b9a7d0a0ec4c474a49ce33cb5721332c19c9846f1a1c6a2cac45ae7bf08f187",
+    "seed": 20260928,
+    "replications": 8192,
+    "draws": 1999,
+    "numpy": "2.2.6",
+    "python": "3.12.14",
+    "methods": [
+      "CBB_LONG",
+      "HAC_LONG",
+      "SELF_NORMALIZED"
+    ],
+    "families": [
+      "iid_candidate",
+      "date_shared",
+      "clustered_iid",
+      "ar7",
+      "ar28",
+      "skew_date",
+      "t3_date",
+      "ar56",
+      "ar28_skew",
+      "ar28_t3",
+      "ar28_persistent_filter"
+    ],
+    "profiles": [
+      [
+        0.44747474747474747,
+        0.25
+      ],
+      [
+        0.44747474747474747,
+        0.4
+      ],
+      [
+        0.44747474747474747,
+        0.5
+      ],
+      [
+        0.44747474747474747,
+        0.75
+      ],
+      [
+        0.44747474747474747,
+        0.9
+      ],
+      [
+        0.2777777777777778,
+        0.5
+      ],
+      [
+        0.7,
+        0.5
+      ]
+    ],
+    "mc_alpha_per_interval": 9.018759018759019e-06
+  },
+  "limiting_critical": {
+    "critical": 5.3356399234576815,
+    "paths": 262144,
+    "grid": 2048,
+    "coarse_grid": 512,
+    "coarse_critical": 5.3358058945221165,
+    "half_criticals": [
+      5.326872729811783,
+      5.34358469213513
+    ],
+    "quantile_mc95": [
+      5.303268250471789,
+      5.368318172102008
+    ],
+    "relative_grid_difference": 3.110612163048643e-05,
+    "relative_half_difference": 0.003132138330751003,
+    "numerical_screen_pass": true
+  },
+  "tests": {
+    "focused": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 1.125,
+      "sha256": "f7f0455472d3b55b9b288516c4fef8508a3993ad90bbc9f8bad1cf23f651e285"
+    },
+    "full": {
+      "tests": 1228,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 163.681,
+      "sha256": "4737d835ae5e34bc30447eb0383dbcb89ceb4bd26100a0d87665b9a54db46e86"
+    }
+  },
+  "integrity_report": "reports/v11_methodology_resolution/integrity_after.json",
+  "integrity_sha256": "60cbb5df05b5eff283b66d6397c721742eceb6849bf3fa1fcc092ec0969adf40",
+  "calibration_hash_manifest_sha256": "b217ea43744aa77943d984870111106b4ead045f888a28d27db4fc4a82aa1ba0",
+  "frozen_v9_score_sha256": "c2fb47fb459a97024ebedc12af0354d6c28792e2dce87c1207eba2ba5e4664e2",
+  "boundaries": {
+    "v9_v10": "CONSUMED",
+    "v10": "CLOSED",
+    "holdout": "LOCKED",
+    "real_v11_outcomes_evaluated": false,
+    "prospective_collection_started": false,
+    "orders_placed": false,
+    "commit_created": false
+  }
+}
