@@ -1,0 +1,40 @@
+{
+  "artifact_type": "V11_READINESS_STUDY_RESULT_NOT_PREREGISTRATION",
+  "verdict": "METHODOLOGY_UNRESOLVED",
+  "engineering": "OFFLINE_INTEGRATION_TESTED",
+  "selected_inference_method": null,
+  "prospective_duration_days": null,
+  "calibration": {
+    "durations": [
+      180,
+      270,
+      365,
+      448,
+      560,
+      728
+    ],
+    "methods": [
+      1,
+      7,
+      28
+    ],
+    "families": 6,
+    "feasibility_cells": 180,
+    "inference_cells": 324,
+    "passed_aggregate_method_screens": 0,
+    "binding": {
+      "status": "SYNTHETIC_ONLY_NOT_V11_OUTCOMES",
+      "seed": 20260925,
+      "draws": 999,
+      "replications": 400,
+      "numpy": "2.2.6",
+      "python": "3.12.14",
+      "spec_sha256": "0d21a93d2daf6888b4ca755b2678608485f9adfff7569a59971a8915db7de837",
+      "source_sha256": "4b9a7d0a0ec4c474a49ce33cb5721332c19c9846f1a1c6a2cac45ae7bf08f187"
+    }
+  },
+  "protected_integrity_report": "reports/v11_readiness_study/integrity_after.json",
+  "score_bundle_sha256": "c2fb47fb459a97024ebedc12af0354d6c28792e2dce87c1207eba2ba5e4664e2",
+  "focused_passed": 73,
+  "full_passed": 1199
+}
