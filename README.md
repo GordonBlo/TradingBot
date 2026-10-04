@@ -11,7 +11,8 @@ Research-grade crypto trading platform focused on **causal backtesting, reproduc
 **Timeframe:** 15m  
 **Direction:** Long-only
 
-> **Current status:** V10 combined L2 + aggTrade 300s economic discovery completed: **NO_STABLE_COMBINED_SIGNAL; research branch CLOSED**.
+> **Current status:** V11 L2 entry filter engineering completed; **METHODOLOGY_UNRESOLVED; branch DEFERRED / CLOSED_FOR_NOW**. Prospective V11 validation was never started.
+> V10 combined L2 + aggTrade 300s economic discovery remains **NO_STABLE_COMBINED_SIGNAL; research branch CLOSED**.
 > V9 and V10 discovery data are **CONSUMED**, never fresh independent validation. The blind holdout remains **LOCKED**.
 > No advancement of this V10 hypothesis to strategy validation, paper trading, or live trading. Real-money orders remain disabled; no profitable strategy has been validated.
 
@@ -120,6 +121,7 @@ The project deliberately separates data collection, research, simulation and liv
 | V10 execution research foundation | Cost-aware and depth-aware offline simulation; public L2 + aggTrade collector implemented |
 | V10 acquisition | 8 eligible sessions / 24 hours / 4 UTC start dates; now CONSUMED discovery evidence |
 | V10 economic discovery | Completed: NO_STABLE_COMBINED_SIGNAL; forensic audit PASS; CLOSED |
+| V11 L2 entry filter | Engineering completed; all three inference methods failed required calibration; METHODOLOGY_UNRESOLVED; no prospective validation; DEFERRED / CLOSED_FOR_NOW |
 
 Failed hypotheses remain part of the project history instead of being hidden or post-hoc optimized.
 
@@ -153,6 +155,12 @@ Economic discovery preregistration `a296e5ed304640d7` completed its single autho
 All seven information gates failed: the combined L2 + aggTrade signal did not improve on L2-only. Tail and non-overlapping anchor coverage passed, but both base-net economic gates failed. The [immutable closure record](research/v10_microstructure_economic_discovery/a296e5ed304640d7/synthesis.json) binds the frozen definition and sealed report hashes and records the failed gates.
 
 This frozen economic discovery hypothesis is **CLOSED**, with **no advancement to strategy validation, paper trading, or live trading**. All eight sessions are **CONSUMED discovery evidence** and must never be reused as fresh validation. The blind holdout remains **LOCKED**; no profitable strategy has been validated. The frozen [protocol](docs/v10_microstructure_economic_discovery.md), [executor](docs/v10_economic_executor.md), authorization, reservation and sealed results remain historical evidence; the one-time execution opportunity is consumed.
+
+## V11 — Engineering Completed; Methodology Unresolved; Branch Deferred
+
+The fixed V6 H0 parent, frozen static V9 L2 score and sole `prediction > 0` filter remained unchanged. Preparation and offline engineering completed, but all three prespecified inference methods failed the required synthetic calibration: **METHODOLOGY_UNRESOLVED**. No inference method, duration or numerical prospective success gates were selected.
+
+Prospective V11 validation was **never started**, and no real V11 outcomes were evaluated. The branch is **DEFERRED / CLOSED_FOR_NOW**, with no advancement to prospective validation, paper trading or live trading. The [immutable closure](research/v11_l2_entry_filter/synthesis.json) binds the existing [methodology results](research/v11_methodology_resolution/RESULT.json). Resumption requires a separately preregistered methodology study; adding methods or relaxing gates does not reopen this completed study. No profitable strategy has been validated.
 
 ---
 
@@ -300,6 +308,13 @@ NO_STABLE_COMBINED_SIGNAL / Forensic Audit PASS
         ↓
 V10 Economic Discovery Hypothesis CLOSED
 No advancement to strategy validation, paper trading or live trading
+
+V11 Entry Filter Engineering / Synthetic Methodology COMPLETED
+        ↓
+METHODOLOGY_UNRESOLVED
+        ↓
+V11 DEFERRED / CLOSED_FOR_NOW
+Prospective validation NEVER_STARTED
 ```
 
 Real-money execution will not be enabled solely because a historical backtest performs well.

@@ -1,0 +1,109 @@
+{
+  "advancement": {
+    "live_trading": false,
+    "paper_trading": false,
+    "prospective_validation": false,
+    "strategy_validation": false
+  },
+  "artifact_type": "V11_IMMUTABLE_L2_ENTRY_FILTER_METHODOLOGY_CLOSURE",
+  "blind_holdout": {
+    "accessed_for_closure": false,
+    "status": "LOCKED"
+  },
+  "branch": "V11_PROSPECTIVE_L2_ENTRY_FILTER",
+  "branch_status": "CLOSED_FOR_NOW",
+  "closed_on": "2026-10-04",
+  "closure_operations": {
+    "calibration_tolerances_relaxed": false,
+    "frozen_score_refit_or_modified": false,
+    "inference_methods_added": false,
+    "methodology_experiments_run": false,
+    "orders_placed": false
+  },
+  "engineering": {
+    "artifact_bindings": {
+      "research/v11_preparation/v9_static_score/preparation_binding.json": "e19395bd0a114a0cea6c9f4d15afe429a9e9be9ca8aac11470edf0d407ae287b",
+      "research/v11_readiness_study/ENGINEERING_AND_DECISION.md": "fc5f5554c6bc3d4377628b735e53de6b99e8fe14ef0811ae78772a4f4fe6c444",
+      "research/v11_readiness_study/READINESS_RESULT.json": "8e3be3e995da6c47a5d63cd4eabb91385e7f8caab079ef56d19910b8abf0c824",
+      "src/backtest/v11_entry_filter.py": "dd6b7ba6fab27539e96c59b6c40b70ae2ee4c1bc49902654d6b5fef7b4f90554",
+      "src/research/v11_materializer.py": "cdc5dee34867c7302b2cc39d230316b3a2ef05868b9b17d2a70ccf5395a09820",
+      "src/research/v11_score.py": "995ba2b64160741173e38e66bdc8b673a87b5a6f76babeb5475f15122f331c9c"
+    },
+    "readiness_result": "OFFLINE_INTEGRATION_TESTED",
+    "status": "COMPLETED"
+  },
+  "evidence_status": {
+    "V10": "CONSUMED",
+    "V9": "CONSUMED"
+  },
+  "filter": {
+    "rule": "prediction > 0",
+    "subset_only": true,
+    "unchanged": true
+  },
+  "fixed_parent": {
+    "artifact_bindings": {
+      "research/v6_mtf_continuation/e1eef7bdd0c37ad4/manifest.json": "2dcc805e71f7b95cf6e39b6d628f301a6123bdcbe73b24401aa80c8f15ffb6de",
+      "src/analysis/indicators.py": "f8398e679d6dca797073e772aa581423eef369c5e9192356dfb75c24c6133d22",
+      "src/strategy/models.py": "367564e45b109423c9dccd78fa664f28ac62c2aefbff179035b426e591f2bef6",
+      "src/strategy/v6_mtf_continuation.py": "2bc13ee68bb55c7dfaa2098fbe1460082004705e44978429e0fb607ba45f2653"
+    },
+    "name": "V6_H0_MTF_CONTINUATION",
+    "preregistration_id": "e1eef7bdd0c37ad4",
+    "unchanged": true
+  },
+  "frozen_v9_score": {
+    "evidence_role": "CONSUMED_MODEL_PREPARATION_ONLY",
+    "path": "research/v11_preparation/v9_static_score/score_bundle.json",
+    "sha256": "c2fb47fb459a97024ebedc12af0354d6c28792e2dce87c1207eba2ba5e4664e2",
+    "unchanged": true
+  },
+  "historical_record_policy": "Immutable closure. Preserve the unresolved verdict and failed calibration evidence; never present consumed V9/V10 evidence as fresh validation.",
+  "methodology": {
+    "all_three_prespecified_methods_failed_required_calibration": true,
+    "artifact_bindings": {
+      "reports/v11_methodology_resolution/calibration/anchor_results.json": "ea93e435382342b3d561002758b97212590038eaebd8c6b63db1832189c0b37e",
+      "reports/v11_methodology_resolution/calibration/artifact_hashes.json": "b217ea43744aa77943d984870111106b4ead045f888a28d27db4fc4a82aa1ba0",
+      "reports/v11_methodology_resolution/calibration/decision.json": "22daa8882f7f03cd630280d1533a64fb92bb34962d75b2298fea4229e13ea520",
+      "reports/v11_methodology_resolution/calibration/study_binding.json": "461b30afddb7cbc190c25410ffe10aa37ffe2d2b2beeb3af266e3a2414dde241",
+      "reports/v11_methodology_resolution/delivery_hashes.json": "2771e360ee1a2f77c4e6e22a98c3e42575e34de34d447712903ce6f86de1e9f8",
+      "research/v11_methodology_resolution/RESULT.json": "4e2a500735edf8d68926423c59ca8de506cc25892c8673dafe4cc6261ef807d5",
+      "research/v11_methodology_resolution/RESULTS.md": "b1b0af48bd8741e423ad7799db14b0077051b130ada81a127d5532cf2ee304b4",
+      "research/v11_methodology_resolution/STUDY_SPEC.md": "516d347491f1cc81f03cd268625d66993e5d59387ab2bdf32e96ec03fc01516b"
+    },
+    "calibration_status": "COMPLETED",
+    "methods": {
+      "CBB_LONG": {
+        "failed_scenario_cells": 77,
+        "status": "FAILED_REQUIRED_CALIBRATION",
+        "total_scenario_cells": 77
+      },
+      "HAC_LONG": {
+        "failed_scenario_cells": 76,
+        "status": "FAILED_REQUIRED_CALIBRATION",
+        "total_scenario_cells": 77
+      },
+      "SELF_NORMALIZED": {
+        "failed_scenario_cells": 54,
+        "status": "FAILED_REQUIRED_CALIBRATION",
+        "total_scenario_cells": 77
+      }
+    },
+    "numerical_success_gates_frozen": false,
+    "selected_duration_days": null,
+    "selected_inference_method": null
+  },
+  "profitable_strategy_validated": false,
+  "prospective_validation": {
+    "collection_started": false,
+    "preregistration_created": false,
+    "real_outcomes_evaluated": false,
+    "status": "NEVER_STARTED"
+  },
+  "research_status": "DEFERRED",
+  "resume_policy": "Do not resume this branch by adding methods or relaxing gates without a separately preregistered methodology study.",
+  "schema_version": 1,
+  "scope": "Existing fixed V6 H0 parent and frozen V9 static L2 entry filter methodology branch. Preserve the reusable engineering foundation.",
+  "v10_branch_status": "CLOSED",
+  "verdict": "METHODOLOGY_UNRESOLVED"
+}

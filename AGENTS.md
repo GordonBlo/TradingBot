@@ -193,6 +193,21 @@ V10:
 - no profitable strategy has been validated
 - immutable closure: research/v10_microstructure_economic_discovery/a296e5ed304640d7/synthesis.json
 
+V11 L2 entry filter:
+- preparation and offline engineering foundation completed
+- static V9 L2 score bundle exists: research/v11_preparation/v9_static_score/score_bundle.json
+- fixed V6 H0 parent, frozen V9 score, and sole prediction > 0 filter remained unchanged
+- prospective V11 validation was NEVER_STARTED; no real V11 outcomes were evaluated
+- synthetic methodology calibration completed; all three prespecified inference methods failed required calibration
+- statistical methodology verdict: METHODOLOGY_UNRESOLVED
+- no inference method or duration selected; no numerical prospective success gates frozen
+- branch DEFERRED / CLOSED_FOR_NOW
+- do not resume by adding methods or relaxing gates without a separately preregistered methodology study
+- V9/V10 evidence remains CONSUMED; blind holdout remains LOCKED
+- no advancement to prospective validation, paper trading, or live trading
+- no profitable strategy has been validated
+- immutable closure: research/v11_l2_entry_filter/synthesis.json
+
 Do not reopen a CLOSED research branch without explicit justification.
 
 ---
