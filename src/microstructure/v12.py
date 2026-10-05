@@ -14,6 +14,8 @@ import os
 import platform
 import time
 import uuid
+from builtins import BaseExceptionGroup
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from importlib.metadata import version
@@ -134,6 +136,66 @@ class Policy:
 DEFAULT_POLICY = Policy()
 
 
+def _raise_failures(message, failures):
+    """Original failure first; never replace it with a secondary cleanup error."""
+    failures = list({id(exc): exc for exc in failures}.values())
+    if len(failures) == 1:
+        raise failures[0]
+    if failures:
+        raise BaseExceptionGroup(message, failures) from failures[0]
+
+
+def _close_handles(handles, primary=None):
+    failures = [primary] if primary is not None else []
+    for name, handle in handles:
+        try:
+            if not handle.closed:
+                handle.close()
+        except BaseException as exc:  # noqa: BLE001 -- every cleanup attempted, failures re-raised
+            exc.add_note(f"V12 cleanup: {name}")
+            failures.append(exc)
+    _raise_failures("V12 journal cleanup failures", failures)
+
+
+@contextmanager
+def _http_resource(manager):
+    resource = manager.__enter__()
+    primary = None
+    try:
+        yield resource
+    except BaseException as exc:  # noqa: BLE001 -- retain interrupts until resource cleanup
+        primary = exc
+    failures = [primary] if primary is not None else []
+    try:
+        manager.__exit__(type(primary) if primary else None, primary,
+                         primary.__traceback__ if primary else None)
+    except BaseException as exc:  # noqa: BLE001 -- cleanup failure grouped with original cause
+        exc.add_note("V12 cleanup: public HTTP response")
+        failures.append(exc)
+        raise BaseExceptionGroup("V12 HTTP operation/cleanup failures", failures) from failures[0]
+    _raise_failures("V12 HTTP operation/cleanup failures", failures)
+
+
+@asynccontextmanager
+async def _websocket_resource(manager):
+    resource = await manager.__aenter__()
+    primary = None
+    try:
+        yield resource
+    except BaseException as exc:  # noqa: BLE001 -- retain cancellation until resource cleanup
+        primary = exc
+    failures = [primary] if primary is not None else []
+    try:
+        await manager.__aexit__(type(primary) if primary else None, primary,
+                                primary.__traceback__ if primary else None)
+    except BaseException as exc:  # noqa: BLE001 -- cleanup failure grouped with original cause
+        exc.add_note("V12 cleanup: public WebSocket")
+        failures.append(exc)
+        # Do not let the reconnect handler consume a cleanup error as an outage.
+        raise BaseExceptionGroup("V12 WebSocket operation/cleanup failures", failures) from failures[0]
+    _raise_failures("V12 WebSocket operation failed", failures)
+
+
 class IngestionJournal:
     """Single event-loop ingress boundary: ordinal and clocks BEFORE decoding.
 
@@ -152,7 +214,10 @@ class IngestionJournal:
         self.indices = {}
         self.last_reading = None
         self.raw = (directory / "events.jsonl").open("x", encoding="utf-8", newline="\n")
-        self.acks = (directory / "persistence.acks.jsonl").open("x", encoding="utf-8", newline="\n")
+        try:
+            self.acks = (directory / "persistence.acks.jsonl").open("x", encoding="utf-8", newline="\n")
+        except BaseException as exc:  # noqa: BLE001 -- partial construction must release event file
+            _close_handles((("event journal after acknowledgement-open failure", self.raw),), exc)
 
     def capture(self, raw: bytes, *, record_type=None, stream=None,
                 connection_id="control", epoch=0, unit="NONE", details=None,
@@ -224,17 +289,21 @@ class IngestionJournal:
             "details": details or {}, "parse_error": error,
         }
         encoded = _canonical(event) + "\n"
-        self.raw.write(encoded)
-        self.raw.flush()
-        if self.fsync:
-            os.fsync(self.raw.fileno())
-        completed = self.clock()
-        ack = {"ingestion_ordinal": ordinal, "event_sha256": digest(encoded.encode()),
-               "persistence_complete_monotonic_ns": completed.monotonic_ns}
-        self.acks.write(_canonical(ack) + "\n")
-        self.acks.flush()
-        if self.fsync:
-            os.fsync(self.acks.fileno())
+        try:
+            self.raw.write(encoded)
+            self.raw.flush()
+            if self.fsync:
+                os.fsync(self.raw.fileno())
+            completed = self.clock()
+            ack = {"ingestion_ordinal": ordinal, "event_sha256": digest(encoded.encode()),
+                   "persistence_complete_monotonic_ns": completed.monotonic_ns}
+            self.acks.write(_canonical(ack) + "\n")
+            self.acks.flush()
+            if self.fsync:
+                os.fsync(self.acks.fileno())
+        except BaseException as exc:
+            exc.add_note('V12 journal persistence failure')
+            raise
         return event
 
     def control(self, kind, *, connection_id="control", epoch=0, **details):
@@ -242,8 +311,7 @@ class IngestionJournal:
                             connection_id=connection_id, epoch=epoch, details=details)
 
     def close(self):
-        self.raw.close()
-        self.acks.close()
+        _close_handles((("event journal", self.raw), ("acknowledgement journal", self.acks)))
 
 
 class PublicRawTransport:
@@ -262,7 +330,7 @@ class PublicRawTransport:
             url += "?" + urlencode(params)
         started = self.clock()
         request = Request(url, headers={"X-MBX-TIME-UNIT": "MICROSECOND"}, method="GET")
-        with urlopen(request, timeout=4) as response:
+        with _http_resource(urlopen(request, timeout=4)) as response:
             raw = response.read()
             received = self.clock()
             status = response.status
@@ -283,9 +351,41 @@ class PublicCollectorV2:
         if not 0 < seconds <= 30:
             raise ValueError("engineering capture must be explicitly bounded to <=30 seconds")
         bindings = phase1_binding(self.workspace)
-        from src.research.v12_public_replay import ReplayMachine, certify_session
+        from src.research.v12_public_replay import certify_session
 
         journal = IngestionJournal(directory, uuid.uuid4().hex, clock=self.clock, policy=self.policy)
+        failures = []
+        try:
+            await self._capture_engineering(directory, seconds, bindings, journal)
+        except BaseException as exc:  # noqa: BLE001 -- all failures re-raised after journal cleanup
+            failures.append(exc)
+        try:
+            journal.close()
+        except BaseException as exc:  # noqa: BLE001 -- retain secondary cleanup failure
+            failures.append(exc)
+        if failures:
+            def describe(exc):
+                return {"type": type(exc).__name__, "message": str(exc),
+                        "notes": getattr(exc, '__notes__', []),
+                        "causes": [describe(e) for e in exc.exceptions]
+                        if isinstance(exc, BaseExceptionGroup) else []}
+            try:
+                # Separate append-only failure evidence; never rewrite raw/history.
+                with (directory / 'closure.failure.json').open('x', encoding='utf-8') as output:
+                    output.write(_canonical({"status": "FAILED", "session_id": journal.session_id,
+                                             "eligible": False, "failures": [describe(e) for e in failures]}))
+                    output.flush()
+                    os.fsync(output.fileno())
+            except BaseException as exc:  # noqa: BLE001 -- failure to persist failure evidence is explicit
+                exc.add_note('V12 cleanup: failure-artifact persistence; no successful closure exists')
+                failures.append(exc)
+            _raise_failures("V12 operation/shutdown failures", failures)
+        certificate = certify_session(directory)
+        (directory / "closure.summary.json").write_text(_canonical(certificate), encoding="utf-8")
+        return certificate
+
+    async def _capture_engineering(self, directory, seconds, bindings, journal):
+        from src.research.v12_public_replay import ReplayMachine
         manifest = {"schema_version": "V12_ENGINEERING_SESSION_1", "collector_version": VERSION,
                     "session_id": journal.session_id, "clock_id": journal.clock_id,
                     "policy": asdict(self.policy), "phase1_binding": bindings,
@@ -310,11 +410,15 @@ class PublicCollectorV2:
             return feed(journal.control(kind, **kwargs))
 
         async def http(path, kind, params, connection_id, epoch):
+            nonlocal synced_before
             request_id = f"http-{journal.ordinal + 1}"
             control("SNAPSHOT_REQUEST_START" if kind == "REST_SNAPSHOT" else "PUBLIC_REQUEST_START",
                     connection_id=connection_id, epoch=epoch, request_id=request_id, path=path)
             try:
-                raw, details = await asyncio.to_thread(self.transport.get, path, params)
+                worker = asyncio.create_task(asyncio.to_thread(self.transport.get, path, params))
+                http_workers.append(worker)
+                # Cancelling the ingest task must not orphan an in-flight HTTP worker.
+                raw, details = await asyncio.shield(worker)
                 details["request_id"] = request_id
                 event = feed(journal.capture(raw, record_type=kind, stream="REST",
                                              connection_id=request_id, epoch=epoch,
@@ -324,16 +428,27 @@ class PublicCollectorV2:
                 if kind == "REST_SNAPSHOT":
                     control("SNAPSHOT_RECEIVED", connection_id=connection_id, epoch=epoch,
                             request_id=request_id, snapshot_ordinal=event["ingestion_ordinal"])
+                    if machine.synced and not synced_before:
+                        control("BOOK_SYNC_ESTABLISHED", connection_id=connection_id, epoch=epoch,
+                                depth_id=machine.book.last_update_id)
+                        if epoch or machine.resync_seen:
+                            control("RESYNC_COMPLETE", connection_id=connection_id, epoch=epoch)
+                        synced_before = True
                 return event
             except (OSError, ValueError, MicrostructureIntegrityError) as exc:
+                if 'V12 journal persistence failure' in getattr(exc, '__notes__', ()):
+                    raise
                 control("PUBLIC_REQUEST_FAILED", connection_id=connection_id, epoch=epoch,
                         request_id=request_id, reason=type(exc).__name__, message=str(exc), path=path)
+                observed_http_failures.add(id(exc))
                 return None
 
-        tasks = set()
+        tasks, http_workers, observed_http_failures = [], [], set()
+        synced_before = False
         epoch, clean = 0, False
         loop = asyncio.get_running_loop()
         deadline = loop.time() + seconds
+        primary = None
         try:
             await http("/api/v3/time", "CLOCK", {}, "control", 0)
             await http("/api/v3/exchangeInfo", "SYMBOL_RULES", {"symbol": "BTCUSDC"}, "control", 0)
@@ -342,15 +457,15 @@ class PublicCollectorV2:
                 control("CONNECT_START" if epoch == 0 else "RECONNECT_START",
                         connection_id=connection_id, epoch=epoch)
                 try:
-                    async with self.connect_factory(WS_URL, open_timeout=4, close_timeout=1,
+                    async with _websocket_resource(self.connect_factory(WS_URL, open_timeout=4, close_timeout=1,
                                                     ping_interval=20, ping_timeout=20,
-                                                    max_queue=128) as ws:
+                                                    max_queue=128)) as ws:
                         control("CONNECTED" if epoch == 0 else "RECONNECTED",
                                 connection_id=connection_id, epoch=epoch)
                         snapshot_task = asyncio.create_task(http(
                             "/api/v3/depth", "REST_SNAPSHOT", {"symbol": "BTCUSDC", "limit": self.policy.snapshot_limit},
                             connection_id, epoch))
-                        tasks.add(snapshot_task)
+                        tasks.append(snapshot_task)
                         synced_before = False
                         while loop.time() < deadline:
                             try:
@@ -375,25 +490,59 @@ class PublicCollectorV2:
                                     snapshot_task = asyncio.create_task(http(
                                         "/api/v3/depth", "REST_SNAPSHOT", {"symbol": "BTCUSDC", "limit": self.policy.snapshot_limit},
                                         connection_id, epoch))
-                                    tasks.add(snapshot_task)
+                                    tasks.append(snapshot_task)
                         control("DISCONNECTED", connection_id=connection_id, epoch=epoch,
                                 reason="BOUNDED_ENGINEERING_END", expected=True)
                     clean = True
                     break
                 except (OSError, ValueError, WebSocketException, MicrostructureIntegrityError) as exc:
+                    if 'V12 journal persistence failure' in getattr(exc, '__notes__', ()):
+                        raise
                     control("DISCONNECTED", connection_id=connection_id, epoch=epoch,
                             reason=type(exc).__name__, message=str(exc), expected=False)
                     control("RESYNC_START", connection_id=connection_id, epoch=epoch)
                     epoch += 1
                     await asyncio.sleep(min(.5, max(0, deadline - loop.time())))
-        finally:
+        except BaseException as exc:  # noqa: BLE001 -- retain interruption while all resources drain
+            primary = exc
+
+        async def shutdown():
+            failures = []
             for task in tasks:
-                if not task.done():
-                    task.cancel()
-            if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
-            control("SESSION_CLOSE", clean=clean, engineering_only=True)
-            journal.close()
-        certificate = certify_session(directory)
-        (directory / "closure.summary.json").write_text(_canonical(certificate), encoding="utf-8")
-        return certificate
+                try:
+                    if not task.done():
+                        task.cancel()
+                except BaseException as exc:  # noqa: BLE001 -- continue independent task cleanup
+                    exc.add_note('V12 cleanup: background task cancellation')
+                    failures.append(exc)
+            for name, owned in (('snapshot ingestion tasks', tasks), ('public HTTP workers', http_workers)):
+                try:
+                    results = await asyncio.gather(*owned, return_exceptions=True)
+                    for result in results:
+                        if isinstance(result, BaseException) and not isinstance(result, asyncio.CancelledError):
+                            # A worker error already reported by its HTTP caller is not secondary cleanup failure.
+                            if id(result) in observed_http_failures:
+                                continue
+                            result.add_note(f'V12 cleanup: {name}')
+                            failures.append(result)
+                except BaseException as exc:  # noqa: BLE001 -- preserve errors and continue cleanup
+                    exc.add_note(f'V12 cleanup: draining {name}')
+                    failures.append(exc)
+            try:
+                control("SESSION_CLOSE", clean=clean and primary is None and not failures,
+                        engineering_only=True)
+            except BaseException as exc:  # noqa: BLE001 -- SESSION_CLOSE must not bypass file cleanup
+                exc.add_note('V12 shutdown: SESSION_CLOSE persistence')
+                failures.append(exc)
+            return failures
+
+        cleanup_task = asyncio.create_task(shutdown())
+        interruptions = []
+        while not cleanup_task.done():
+            try:
+                await asyncio.shield(cleanup_task)
+            except asyncio.CancelledError as exc:
+                # A second cancellation cannot skip the remaining owned cleanup steps.
+                interruptions.append(exc)
+        failures = ([primary] if primary is not None else []) + interruptions + cleanup_task.result()
+        _raise_failures('V12 capture/shutdown failures', failures)
