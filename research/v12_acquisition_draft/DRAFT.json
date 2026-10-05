@@ -1,0 +1,135 @@
+{
+  "schema": "V12_ACQUISITION_PROTOCOL_DRAFT_1",
+  "status": "DRAFT / NOT FROZEN / ACQUISITION NOT AUTHORIZED",
+  "final_protocol_id": null,
+  "frozen_definition_sha256": null,
+  "cutoff_utc": null,
+  "acquisition_authorized": false,
+  "evaluation_authorized": false,
+  "readiness_decision": "NEEDS_OPERATIONAL_HARDENING",
+  "scope": "Outcome-blind PUBLIC BTCUSDC Spot acquisition only; no fill or profitability claim",
+  "engineering_inputs": {
+    "head": "ce59f7f68c10b1b20239051f1b1dbc1dc48f0492",
+    "branch": "v3.3-manual",
+    "tags": ["v12-maker-bound-phase1", "v12-public-collector-phase2", "v12-public-collector-hardening1"],
+    "bindings": "reports/v12_phase3_resume/integrity_before.json",
+    "operational_tests": "reports/v12_phase3_resume/focused_pytest_b.xml",
+    "soak_metrics": "reports/v12_phase3_resume/soak.metrics.json",
+    "soak_classification": "ENGINEERING_ONLY / PERMANENTLY_PROSPECTIVE_INELIGIBLE"
+  },
+  "blocking_prerequisites": [
+    "Collector permits only engineering sessions <=30 seconds; no sustained prospective entry point exists",
+    "Persisted ingress/backlog occupancy is unknown; soak-only WS frame sampling is not a persisted guard",
+    "Existing delay guard excludes raw/ack fsync and live replay; full causal availability and local backlog guards must be implemented and tested",
+    "Prospective 15-minute lifecycle, periodic clock/metadata refresh, bounded memory and sustained throughput are unverified",
+    "Atomic session seals, failure-aware eligibility, fixed scheduler, disk reserve and all-history dataset seal are not implemented"
+  ],
+  "public_data": {
+    "venue": "BINANCE_SPOT", "symbol": "BTCUSDC",
+    "streams": ["depth@100ms", "trade", "aggTrade", "bookTicker"],
+    "rest_get_allowlist": ["/api/v3/time", "/api/v3/exchangeInfo", "/api/v3/depth"],
+    "timestamp_unit": "MICROSECOND; original raw units retained",
+    "private_streams": false, "orders": false, "credentials": false,
+    "upstream_queue_residence": "UNKNOWN"
+  },
+  "cutoff_design": {
+    "order": ["Finish and certify operational prerequisites", "Separately authorized final freeze", "Commit and tag final protocol plus source/config/runtime bindings", "Select and bind future UTC cutoff strictly after freeze", "Separately authorize acquisition"],
+    "session_start_rule": "First control/receipt UTC strictly greater than cutoff; no pre-cutoff bootstrap or straddle",
+    "engineering_sessions": "Never eligible regardless of date or certification",
+    "cutoff_binding": "Immutable cutoff record binds frozen protocol SHA, commit/tag and exact UTC timestamp before first prospective session"
+  },
+  "classifications": {
+    "FAILED": "Abrupt termination, Ctrl+C/cancellation, unclosed resources, journal/write/fsync/ack failure, truncation, malformed provenance/hash/replay, missing/partial final seal; preserve available bytes and failure history",
+    "INELIGIBLE": "Successfully closed, structurally verifiable session failing any completeness/continuity/clock/backlog/metadata/cutoff/scope gate; recovery cannot clear latch",
+    "ELIGIBLE": "Authorized prospective CLOSED session with valid immutable seal and every gate true",
+    "precedence": "FAILED before INELIGIBLE before ELIGIBLE; failure sidecar/controller history defeats raw-only replay certification",
+    "active": "PENDING, never research input; unfinished at endpoint becomes FAILED",
+    "repair": "Never rewrite, trim, delete, overwrite or promote failed history; restart with new identity/directory only"
+  },
+  "eligibility_gates": [
+    "Explicit prospective scope and authorization; not engineering",
+    "CLOSED; successful resource closure; final immutable seal committed last; no failure sidecar/controller latch",
+    "Exact raw/ack/manifest/metadata/source/runtime/config bindings verified",
+    "Every event has exact-line SHA-bound acknowledgement and valid completion provenance",
+    "Raw replay twice; canonical bytes identical and seal-bound",
+    "Valid snapshot/update bridge and synchronized depth",
+    "Continuous depth/trade/aggregate IDs and aggregate ranges; complete Decimal reconciliation of all recorded trades/aggregates",
+    "Continuous ingestion ordinals, stream indices, connection epochs and clock namespace",
+    "No historical gap, disconnect, outage, resync, drop, malformed event or unresolved reconciliation",
+    "Valid UTC/monotonic provenance; no regression/discontinuity over existing 10000us tolerance",
+    "Dated metadata and clock mapping refreshed at most every 30s; existing 60s freshness limits retained",
+    "Full receive-through-persistence-and-live-replay availability delay <=1000000us; persisted local WS frame occupancy <=128; no known application drops; implement and test before freeze",
+    "Start strictly post-cutoff; no straddle",
+    "Disk reserve maintained; closure and durability steps successful"
+  ],
+  "capture_edges": {
+    "first_trade_id": "Observed baseline only; no preceding coverage inferred",
+    "partial_first_last_aggregate": "Reject whole session; no trimming, grace-fill, outcome backfill or selective prefix",
+    "late_arrival_at_close": "Fixed capture endpoint, deterministic owned-worker shutdown; no outcome-selected drain; unresolved edge rejects whole session",
+    "eligible_coverage": "Elapsed monotonic time from first valid BOOK_SYNC_ESTABLISHED to expected endpoint DISCONNECTED; no pre-bridge credit; retain raw bootstrap unchanged",
+    "endpoint": "900s from first session control; no extension to reconcile edges"
+  },
+  "storage": {
+    "proposed_session_seconds": 900,
+    "current_certified_maximum_seconds": 30,
+    "rotation": "One immutable directory per fixed session; paired events.jsonl and persistence.acks.jsonl; no independent intra-session rotation",
+    "fsync": "Flush/fsync each raw event before SHA-bound ack, then flush/fsync ack; no batching",
+    "measured_persisted_bytes_per_second": 69975.44222582049,
+    "projected_bytes_per_hour": 251911592.01295376,
+    "projected_bytes_per_day": 6045878208.31089,
+    "budget_multiplier": 4,
+    "headroom_rationale": "Operational planning assumption, not a confidence bound or rate guarantee",
+    "session_budget_bytes": 251911592.01295376,
+    "minimum_free_space_reserve_bytes": 10737418240,
+    "reserve_rationale": "10GiB exceeds 40 planned session budgets, providing closure/failure-evidence headroom",
+    "disk_preflight": "Free >=10GiB plus one 4x-rate session budget; separate same-volume write/fsync/close and atomic-publication probe",
+    "runtime_guard": "Check reserve before each append; breach stops acquisition and attempts FAILED closure; no auto-delete or same-slot restart",
+    "atomic_seal": "Close tasks/journals; fsync; hash exact bytes; replay twice; write/fsync exclusive temporary seal on same volume; publish final marker atomically without overwrite; verify published bytes",
+    "durability": "Record filesystem and actual flush/atomic-publication capability; no invented directory-fsync/power-loss guarantee; missing/torn marker is FAILED",
+    "hashes": ["events.jsonl", "persistence.acks.jsonl", "session.manifest.json", "exact metadata response records", "canonical repeated replay", "final session-seal bytes"],
+    "compression": "Only post-seal, lossless, archive SHA plus original file SHAs; decompressed bytes match exactly; retain originals; no automatic deletion"
+  },
+  "readiness_target": {
+    "minimum_eligible_hours": 1,
+    "minimum_eligible_sessions": 6,
+    "minimum_distinct_utc_start_dates": 3,
+    "maximum_per_date_fraction_of_total_eligible_coverage": 0.4,
+    "maximum_sessions_launched_per_utc_date": 2,
+    "session_duration_seconds": 900,
+    "rationale": "Two independent boots on each of three dates is a minimal repeated operational check. Six 15-minute windows give 90 minutes gross; one-hour synchronized coverage rejects predominantly unsynced captures. 40% prevents date domination. No statistical power, fill, economic or regime-coverage claim.",
+    "all_sessions": "All passing sessions count; no selective removal to satisfy concentration",
+    "not_v10_reuse": "Engineering rationale only, not V10's 24h/8/4 thresholds"
+  },
+  "stopping_rule": {
+    "maximum_horizon_hours_after_cutoff": 72,
+    "launch_slots_utc": ["00:15:00", "12:15:00"],
+    "slot_rule": "Every slot strictly after cutoff whose full window plus 30s cleanup allowance fits before horizon; no catch-up, same-slot retry or discretionary replacement",
+    "bootstrap_limit_seconds": 10,
+    "cleanup_allowance_seconds": 30,
+    "end": "First completed-session readiness PASS, else cutoff+72h; no observations beyond endpoint to improve reconciliation",
+    "expired": "INSUFFICIENT_ACQUISITION; seal all history and stop; no discretionary extension",
+    "rationale": "Three daily operational repetitions fit within 72h; endpoint cannot depend on research outcomes"
+  },
+  "dataset_seal_schema": {
+    "status": "Future schema proposal only; no dataset seal created",
+    "fields": ["protocol_id", "protocol_sha256", "protocol_commit", "protocol_tag", "cutoff_record_sha256", "cutoff_utc", "horizon_end_utc", "stop_reason", "all_session_history", "source_sha256", "config_sha256", "runtime_identity", "readiness_totals", "readiness_gate_booleans", "dataset_seal_body_sha256"],
+    "session_fields": ["session_id", "slot_utc", "classification", "reason_codes", "start_utc", "end_utc", "monotonic_start_ns", "monotonic_end_ns", "clock_namespace", "eligible_coverage_seconds", "raw_sha256", "ack_sha256", "manifest_sha256", "session_seal_sha256", "replay_sha256", "metadata_sha256", "source_sha256", "config_sha256", "runtime_identity", "failure_evidence_sha256", "absent_artifact_reasons"],
+    "rules": "Include all ELIGIBLE/INELIGIBLE/FAILED history and missed slots. Null absent hashes with reasons; never omit failures. Body SHA excludes its own digest; later evaluation preregistration binds final seal bytes. Atomic publication without overwrite before maker-plan evaluation."
+  },
+  "outcome_blind_dashboard": {
+    "allowed": ["session counts/classifications", "eligible hours", "UTC dates", "event counts", "gaps", "clock/provenance/reconciliation health", "replay certification", "collector/disk health"],
+    "forbidden": ["maker credited quantity", "fill rates", "V9 scores", "returns", "adverse selection", "PnL", "strategy/economic performance"],
+    "enforcement": "Separate acquisition component without MakerPlan, maker_replay, score or economic entry points; restricted readout; no exploratory raw access"
+  },
+  "future_maker_plan_firewall": {
+    "acquisition_completion_authorizes_evaluation": false,
+    "separate_preregistration_before_opening_outcomes": ["limit-price rule", "quantity", "submission latency assumption", "cancellation latency assumption", "expiry", "conditional acceptance assumptions", "maker-bound application", "evaluation horizon", "fee/cost treatment", "economic estimands", "statistical method", "success/failure gates"],
+    "parameters_selected_from_prospective_outcomes": false,
+    "unconditional_public_fill_claim": false
+  },
+  "research_boundary": {
+    "V9": "CONSUMED", "V10": "CONSUMED / CLOSED", "V11": "DEFERRED / CLOSED_FOR_NOW",
+    "blind_holdout": "LOCKED / NOT ACCESSED", "profitable_strategy_validated": false,
+    "paper_live_advancement": false
+  }
+}
