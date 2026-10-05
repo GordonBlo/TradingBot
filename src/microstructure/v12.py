@@ -1,4 +1,4 @@
-"""V12 public collector V2. Engineering captures only, at most 30 seconds.
+"""V12 public collector V2. Smoke <=30s; separately authorized engineering <=900s.
 
 Reuses V10 canonical persistence/source hashes and the existing L2 reconstructor
 through replay. No credentials, private endpoint, strategy or order interface.
@@ -221,8 +221,8 @@ class IngestionJournal:
 
     def capture(self, raw: bytes, *, record_type=None, stream=None,
                 connection_id="control", epoch=0, unit="NONE", details=None,
-                ingress_queue_depth=None):
-        receipt = self.clock()
+                ingress_queue_depth=None, _receipt=None):
+        receipt = _receipt if _receipt is not None else self.clock()
         self.ordinal += 1
         ordinal = self.ordinal
         decode_start = self.clock()
@@ -295,12 +295,16 @@ class IngestionJournal:
             if self.fsync:
                 os.fsync(self.raw.fileno())
             completed = self.clock()
+            if getattr(self, 'operational_enabled', False):
+                self.raw_fsync_completed_ns = completed.monotonic_ns
             ack = {"ingestion_ordinal": ordinal, "event_sha256": digest(encoded.encode()),
                    "persistence_complete_monotonic_ns": completed.monotonic_ns}
             self.acks.write(_canonical(ack) + "\n")
             self.acks.flush()
             if self.fsync:
                 os.fsync(self.acks.fileno())
+            if getattr(self, 'operational_enabled', False):
+                self.ack_fsync_completed_ns = self.clock().monotonic_ns
         except BaseException as exc:
             exc.add_note('V12 journal persistence failure')
             raise
@@ -346,6 +350,13 @@ class PublicCollectorV2:
         self.clock = clock or ReceiptClock()
         self.transport = transport or PublicRawTransport(self.clock)
         self.connect_factory = connect_factory
+
+    async def capture_engineering_soak(self, directory: Path, *, seconds: float,
+                                       engineering_authorized=False, **options):
+        from src.microstructure.v12_operational import capture_sustained
+
+        return await capture_sustained(self, directory, seconds=seconds,
+                                       engineering_authorized=engineering_authorized, **options)
 
     async def capture_engineering(self, directory: Path, *, seconds: float):
         if not 0 < seconds <= 30:
@@ -399,11 +410,20 @@ class PublicCollectorV2:
                     "websocket_url": WS_URL, "engineering_only": True,
                     "research_eligibility": "NOT_AUTHORIZED", "duration_cap_seconds": seconds,
                     "private_data": False, "orders": False, "commission": "UNAVAILABLE_PUBLIC_ONLY"}
-        (directory / "session.manifest.json").write_text(_canonical(manifest), encoding="utf-8")
+        if getattr(journal, 'operational_enabled', False):
+            manifest.update(journal.manifest_fields(self.workspace))
+        if getattr(journal, 'operational_enabled', False):
+            journal.persist_manifest(manifest)
+        else:
+            (directory / "session.manifest.json").write_text(_canonical(manifest), encoding="utf-8")
         machine = ReplayMachine(self.policy)
 
         def feed(event):
+            if getattr(journal, 'operational_enabled', False):
+                journal.before_live(event, machine)
             machine.feed(event)
+            if getattr(journal, 'operational_enabled', False):
+                journal.complete(event, machine)
             return event
 
         def control(kind, **kwargs):
@@ -452,6 +472,14 @@ class PublicCollectorV2:
         try:
             await http("/api/v3/time", "CLOCK", {}, "control", 0)
             await http("/api/v3/exchangeInfo", "SYMBOL_RULES", {"symbol": "BTCUSDC"}, "control", 0)
+            if getattr(journal, 'operational_enabled', False):
+                async def refresh_metadata():
+                    while True:
+                        await asyncio.sleep(journal.operational_policy.refresh_seconds)
+                        await http('/api/v3/time', 'CLOCK', {}, 'control', 0)
+                        await http('/api/v3/exchangeInfo', 'SYMBOL_RULES', {'symbol': 'BTCUSDC'}, 'control', 0)
+
+                tasks.append(asyncio.create_task(refresh_metadata()))
             while loop.time() < deadline:
                 connection_id = f"ws-{epoch}"
                 control("CONNECT_START" if epoch == 0 else "RECONNECT_START",
@@ -460,6 +488,8 @@ class PublicCollectorV2:
                     async with _websocket_resource(self.connect_factory(WS_URL, open_timeout=4, close_timeout=1,
                                                     ping_interval=20, ping_timeout=20,
                                                     max_queue=128)) as ws:
+                        if getattr(journal, 'operational_enabled', False):
+                            journal.watch_queue(ws)
                         control("CONNECTED" if epoch == 0 else "RECONNECTED",
                                 connection_id=connection_id, epoch=epoch)
                         snapshot_task = asyncio.create_task(http(
